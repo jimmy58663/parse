@@ -1,7 +1,7 @@
 require('common')
 addon.name = 'Parse'
 addon.author = 'Flippant'
-addon.version = '0.98'
+addon.version = '0.981'
 
 messageColor = 200
 
