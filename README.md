@@ -1,18 +1,22 @@
-# parse v1.63
-An FFXI Parser Addon for Windower. This addon parses both offensive and defensive data, stores WS/JAs/spells data by individual spell, tracks additional information like multihit rates, and provides the ability to export/import data in XML format and log individually recorded data.
+# parse v0.98
+An FFXI Parser Addon for Ashita v4 based on the upstream Parser 1.68. This addon parses both offensive and defensive data, stores WS/JAs/spells data by individual spell, tracks additional information like multihit rates, and provides the ability to export/import data in XML format and log individually recorded data.
+
+## Ashitav4 Caveats
+Several things are not yet implemented, such as logging, settings savings, exporting and importing.
+Various other things may not work properly, please make an issue if you find a bug.
 
 ### Settings
 For now, refer to the Excel Spreadsheet for a brief description of Parse settings. Note that at some point, the settings will be getting a bit of a face lift...
 
 ### Commands
 
-`//parse pause`
+`/parse pause`
 Pauses the parser.
 
-`//parse reset`
+`/parse reset`
 Resets the currently stored data.
 
-`//parse report [stat] [ability name] [chatmode]` Reports stat to party. 
+`/parse report [stat] [ability name] [chatmode]` Reports stat to party. 
 If [stat] not provided, will report damage. Valid stats include, but aren't limited to:
 * damage (% reported is player's portion of total damage)
 * melee | ranged | spike | sc | add (% reported is hit rate)
@@ -24,8 +28,8 @@ If [stat] not provided, will report damage. Valid stats include, but aren't limi
 Note that Reprisal, Counters, and Retaliation damage all appear together under spike damage. However, retaliation rate is reported under retrate.
 
 If [ability name] is provided when reporting WS, JA, spell, MB, or enfeeb, it will only report that particular ability. **It must be an exact match to the database, and is thus case sensitive.** Replace all spaces with an underscore and omit all apostrophes and other special characters. For example:
-* `//parse report ws Rudras_Storm`
-* `//parse report mb Death l2`
+* `/parse report ws Rudras_Storm`
+* `/parse report mb Death l2`
 
 If [chatmode] not provided, will print to personal chatlog. Valid chatmodes include:
 * p: party
@@ -35,35 +39,35 @@ If [chatmode] not provided, will print to personal chatlog. Valid chatmodes incl
 * t [player name]: tell
 * echo: echo to chat (only you can see this)
 
-`//parse show (melee|ranged|magic|defense)`
+`/parse show (melee|ranged|magic|defense)`
 Toggles visibility of each display box. Note that while data is still parsed regardless of visibility, these displays are not updated unless visible, saving resources.
 
-`//parse filter (add|remove) [substring]`
+`/parse filter (add|remove) [substring]`
 Adds/removes substring to monster filter list. Substring is not case sensitive; replace all spaces with underscores and omit special characters. If substring begins with '!' it will exclude any monsters with that substring. If substring begins with '^' it will only include exact matches. For example:
 * `schah` will include Schah and all of his minions.
 * `!schah` will exclude Schah and all of his minions (Schah's Bhata, etc.).
 * `^schah` will only include Schah, and not his minions. 
 * `!^schah` will exclude only Schah.
 
-`//parse filter clear`
+`/parse filter clear`
 Clears filter list.
 
-`//parse list (mobs|players)`
+`/parse list (mobs|players)`
 Lists mobs and players that are found in database.
 
-`//parse rename [player/monster name] [new name]`
+`/parse rename [player/monster name] [new name]`
 Renames a player or monster to a new name for all future, incoming data. To rename again, always use the original name. Replace any spaces with _ and omit all special characters.
 
-`//parse (export|import) [file name]`
+`/parse (export|import) [file name]`
 Exports/imports data to/from the "parse/data/export" folder. Imported data is merged with any current in-game data. If file name is taken, it will append os.clock. NOTE: Exported data will be saved according to any current filters.
 
-`//parse autoexport [file name]`
+`/parse autoexport [file name]`
 Automatically exports database every 500 actions. This interval can be changed in settings under autoexport_interval. Use command again with no file name, or 'off' to turn it off.
 
-`//parse log`
+`/parse log`
 Toggles logging.
 
-`//parse interval [number]`
+`/parse interval [number]`
 Changes the interval rate at which the display boxes are updated in seconds. Default interval is in settings.
 
 ### Display
@@ -91,7 +95,7 @@ The report feature can be used to report either to a chat mode (including tells)
 
 Both players and monsters can be "renamed" for new, incoming data. This can help you distinguish between multiple instanced enemies of the same name, or assist you when testing and comparing various situations.
 
-Always rename using the original name. For example, `//parse rename Kirin Kirin2; //parse rename Kirin Kirin3.` Also exclude any apostrophes and replace any spaces with underscore. Do not include Special Indexing (read more below).
+Always rename using the original name. For example, `/parse rename Kirin Kirin2; /parse rename Kirin Kirin3.` Also exclude any apostrophes and replace any spaces with underscore. Do not include Special Indexing (read more below).
 
 ### Special Indexing
 

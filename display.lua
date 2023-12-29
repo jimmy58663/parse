@@ -4,30 +4,49 @@
 
 ]]
 
+local fonts = require("fonts")
+
 function init_boxes()
 	for box,__ in pairs(settings.display) do
 		create_text(box)
 	end
 end
 
-function create_text(stat_type)
-	local t_settings = settings.display[stat_type]
+local fontsSettings = T{
+    visible = true,
+    color = 0xFFFFFFFF,
+    font_family = "consolas",
+    font_height = 10,
+	bold = true,
+	color_outline = 0xC8000000,
+    draw_flags = FontDrawFlags.Outlined,
+	background = T{
+		visible = true,
+		color = 0x32000000,
+	}
+}
 
-    text_box[stat_type] = texts.new(t_settings)
-	text_box[stat_type]:hide()
-	update_text(text_box[stat_type])
+function create_text(stat_type)
+	local textSettings = fontsSettings
+	textSettings.position_x = settings.display[stat_type].pos.x
+	textSettings.position_y = settings.display[stat_type].pos.y
+	text_box[stat_type] = fonts.new(textSettings)
+	text_box[stat_type].visible = false
+
+	update_text(stat_type)
 end
 
 function update_text(stat_type)    
 	-- Don't update if box wasn't properly added, there are no settings, or it is not set to visible
-	if not text_box[stat_type] or not settings.display[stat_type] or not settings.display[stat_type].visible or not windower.ffxi.get_info().logged_in then
+	-- FIXME!!! check for logged in on ashita
+	if not text_box[stat_type] or not settings.display[stat_type] or not settings.display[stat_type].visible then
 		return
 	end
-
+	
 	local info = {}
-	local head = L{}
+	local head = T{}
 	local to_be_sorted = {}
-	local sorted_players = L{}
+	local sorted_players = T{}
 	local all_damage = 0
 	
 	if settings.display[stat_type]["type"] == "offense" then 
@@ -37,15 +56,15 @@ function update_text(stat_type)
 	end
 
 	-- add data to info table
-	for __,player_name in pairs(get_players()) do		
+	for __,player_name in pairs(get_players()) do
 
 		if (settings.display and settings.display[stat_type]) then
 			to_be_sorted[player_name] = get_player_stat_tally('parry',player_name) + get_player_stat_tally('hit',player_name) + get_player_stat_tally('evade',player_name)
-			info[player_name] = '\\cs('..label_colors('player')..')'..string.format('%-13s',player_name..' ')..'\\cr' 
-			for stat in settings.display[stat_type].order:it() do 
-				if settings.display[stat_type].data_types[stat] then					
-					local d = {}					
-					for report_type,__ in pairs(settings.display[stat_type].data_types[stat]) do
+			info[player_name] = ''..label_colors('player')..string.format('%-13s',player_name..' ')..'|r' 
+			for _, stat in ipairs(settings.display[stat_type].order) do
+				if settings.display[stat_type].data_types[stat] then
+					local d = {}
+					for _, report_type in pairs(settings.display[stat_type].data_types[stat]) do
 						if report_type=="total" then
 							local total = get_player_damage(player_name) -- getting player's damage
 							d[report_type] = total or "--"
@@ -55,7 +74,7 @@ function update_text(stat_type)
 							d[report_type] = get_player_stat_percent(stat,player_name) or "--"
 							--d[report_type] = (total or get_player_damage(player_name)) / get_player_damage() or "--"
 						elseif report_type=="avg" then
-							d[report_type] = get_player_stat_avg(stat,player_name) or "--" 
+							d[report_type] = get_player_stat_avg(stat,player_name) or "--"
 						elseif report_type=="percent" then
 							d[report_type] = get_player_stat_percent(stat,player_name) or "--"
 						elseif report_type=="tally" then
@@ -64,25 +83,26 @@ function update_text(stat_type)
 							d[report_type] = get_player_stat_damage(player_name) or "--"
 						else
 							d[report_type] = "--"
-						end											
+						end
 					end
-					info[player_name] = info[player_name] .. (format_display_data(d))	
+
+					info[player_name] = info[player_name] .. (format_display_data(d))
 				end
 			end
 		end
 	end
 	
 	-- sort players
-	for i=1,settings.display[stat_type].max,+1 do
+	for i=1,settings.display[stat_type].max,1 do
 		p_name = nil
 		top_result = 0
 		for player_name,sort_num in pairs(to_be_sorted) do
-			if sort_num > top_result and not sorted_players:contains('${'..player_name..'}') then
+			if sort_num > top_result and not sorted_players:contains(player_name) then
 				top_result = sort_num
 				p_name = player_name					
 			end						
 		end	
-		if p_name then sorted_players:append('${'..p_name..'}') end		
+		if p_name then sorted_players:append(p_name) end		
 	end
 
 	head:append('[ ${title} ] ${filters} ${pause}')
@@ -102,14 +122,21 @@ function update_text(stat_type)
 	end
 	
 	if text_box[stat_type] then
-		text_box[stat_type]:clear()
-		text_box[stat_type]:append(head:concat('\n'))
-		text_box[stat_type]:append('\n')
-		text_box[stat_type]:append(sorted_players:concat('\n'))	
-		text_box[stat_type]:update(info)
+		local newtext = ""
+		newtext = newtext .. string.format('[ %s ] %s %s\n', stat_type, update_filters(), pause and "- PARSE PAUSED -" or "") -- header
+		newtext = newtext .. format_display_head(stat_type)
+		newtext = newtext ..'\n'
 		
+		for _, player in pairs(sorted_players) do
+			newtext = newtext .. info[player] ..'\n'
+		end
+		
+		--text_box[stat_type]:text = text .. sorted_players:concat('\n')
+		--text_box[stat_type]:update(info)
+		
+		text_box[stat_type].text = newtext
 		if settings.display[stat_type].visible then
-			text_box[stat_type]:show()
+			text_box[stat_type].visible = true
 		end
 	end
 
@@ -117,14 +144,14 @@ end
 
 function format_display_head(box_name)
 	local text = string.format('%-13s',' ')
-	for stat in settings.display[box_name].order:it() do
+	for _, stat in pairs(settings.display[box_name].order) do
 		if settings.display[box_name].data_types[stat] then
 			characters = 0
 			for i,v in pairs(settings.display[box_name].data_types[stat]) do
 				characters = characters + 7
 				if i=='total' then characters = characters +1 end
 			end
-			text = text .. '\\cs('..label_colors('stat')..')' .. string.format('%-'..characters..'s',stat) .. '\\cr'
+			text = text .. ''.. label_colors('stat') .. string.format('%-'..characters..'s',stat) .. '|r'
 		end
 	end
 	return text
@@ -139,7 +166,7 @@ function label_colors(label)
 		g = settings.label[label].green or 255
 	end
 	
-	return tostring(r)..','..tostring(g)..','..tostring(b)
+	return string.format("|cFF%02x%02x%02x|",r,g,b)
 end
 
 function format_display_data(data)
@@ -154,7 +181,7 @@ function format_display_data(data)
 	end
 	
 	if data["total"] then
-		line = line .. string.format('%-8s',data["total"] .. ' ')
+		line = line .. string.format('%-7s',data["total"] .. ' ')
 	end
 
 	if data["avg"] then
@@ -169,7 +196,7 @@ function format_display_data(data)
 	elseif data["damage"] then
 		line = line .. string.format('%-7s',data["damage"])
 	end
-	
+
 	return line
 end
 
@@ -179,14 +206,21 @@ function update_texts()
 	end
 end
 
--- I want this to edit the text boxes directly
 function update_filters()
 	local text = ""
-	if filters['mob'] and filters['mob']:tostring()~="{}" then
-		text = text .. ('Monsters: ' .. filters['mob']:tostring())
+
+	if filters['mob'] and getTableLength(filters['mob']) > 0 then
+		text = text .. 'Monsters:'
+		for k, v in pairs(filters['mob']) do
+			text = text .. ' ' .. v
+		end
 	end
-	if filters['player'] and filters['player']:tostring()~="{}" then
-		text = text .. ('\nPlayers: ' .. filters['player']:tostring())
+
+	if filters['player'] and getTableLength(filters['player']) > 0 then
+		text = text .. '\nPlayers:'
+		for k, v in pairs(filters['player']) do
+			text = text .. ' ' .. v
+		end
 	end
 	return text
 end

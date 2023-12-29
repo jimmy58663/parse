@@ -1,10 +1,13 @@
 function message(message)
-	windower.add_to_chat(messageColor,'PARSE: '..message)
+-- FIXME: add color
+--	windower.add_to_chat(messageColor,'PARSE: '..message)
+	print('PARSE: ' ..message)
 end
 
 function debug(message)
 	if settings.debug then
-		windower.add_to_chat(messageColor,'PARSE DEBUG: '..message)
+		print('PARSE DEBUG: ' ..message)
+--		windower.add_to_chat(messageColor,'PARSE DEBUG: '..message)
 	end
 end
 
@@ -32,4 +35,13 @@ function copy(obj, seen)
 	s[obj] = res
 	for k, v in pairs(obj) do res[copy(k, s)] = copy(v, s) end
 	return res
+end
+
+function getTableLength(tbl)
+	local i = 0
+	for _, _ in pairs(tbl) do
+		i = i + 1
+	end
+
+	return i
 end

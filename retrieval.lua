@@ -6,36 +6,36 @@
 ]]
 
 percent_table = {
-		intimidate = S{"hit","block","anticipate","parry","evade"},
-		evade = S{"hit","block","anticipate","parry"},
-		parry = S{"nonparry"},
-		anticipate = S{"hit","block"},
-		block = S{"nonblock"},
-		absorb = S{"hit","block"},
-		retrate = S{"nonret"},
+		intimidate = T{"hit","block","anticipate","parry","evade"},
+		evade = T{"hit","block","anticipate","parry"},
+		parry = T{"nonparry"},
+		anticipate = T{"hit","block"},
+		block = T{"nonblock"},
+		absorb = T{"hit","block"},
+		retrate = T{"nonret"},
 	
-		melee = S{"miss","+crit"},
-		crit = S{"melee"},
+		melee = T{"miss","+crit"},
+		crit = T{"melee"},
 		
-		ranged = S{"r_miss","+r_crit"},
-		r_crit = S{"ranged"},
+		ranged = T{"r_miss","+r_crit"},
+		r_crit = T{"ranged"},
 		
-		ws = S{"ws_miss"},
-		ja = S{"ja_miss"},
+		ws = T{"ws_miss"},
+		ja = T{"ja_miss"},
 		
-		['1'] = S{'2','3','4','5','6','7','8'},
-		['2'] = S{'1','3','4','5','6','7','8'},
-		['3'] = S{'1','2','4','5','6','7','8'},
-		['4'] = S{'1','2','3','5','6','7','8'},
-		['5'] = S{'1','2','3','4','6','7','8'},
-		['6'] = S{'1','2','3','4','5','7','8'},
-		['7'] = S{'1','2','3','4','5','6','8'},
-		['8'] = S{'1','2','3','4','5','6','7'},
+		['1'] = T{'2','3','4','5','6','7','8'},
+		['2'] = T{'1','3','4','5','6','7','8'},
+		['3'] = T{'1','2','4','5','6','7','8'},
+		['4'] = T{'1','2','3','5','6','7','8'},
+		['5'] = T{'1','2','3','4','6','7','8'},
+		['6'] = T{'1','2','3','4','5','7','8'},
+		['7'] = T{'1','2','3','4','5','6','8'},
+		['8'] = T{'1','2','3','4','5','6','7'},
 	}
 
 -- Returns a table of players	
 function get_players()
-	local player_table = L{}
+	local player_table = T{}
 	
 	for mob,players in pairs(database) do
 		for player,__ in pairs(players) do
@@ -50,7 +50,7 @@ end
 
 -- Returns a table of monsters	
 function get_mobs()
-	local mob_table = L{}
+	local mob_table = T{}
 	
 	for mob,players in pairs(database) do
 		if not mob_table:contains(mob) then
@@ -67,25 +67,25 @@ function get_sorted_players(sort_value,limit)
 	if not get_players() then
 		return nil
 	end
-	
+
 	if not limit then
 		limit = 20
 	end
 	
-	if S{'multi','1','2','3','4','5','6','7','8'}:contains(sort_value) then
+	if T{'multi','1','2','3','4','5','6','7','8'}:contains(sort_value) then
 		sort_value = 'melee'
 	end
 
-	local sorted_player_table = L{}
+	local sorted_player_table = T{}
 	
-	for i=1,limit,+1 do
+	for i=1, limit do
 		player_name = nil
 		top_result = 0
 		for __,player in pairs(player_table) do
 			if sort_value == 'damage' then -- sort by total damage
 				if get_player_damage(player) > top_result and not sorted_player_table:contains(player) then
 					top_result = get_player_damage(player)
-					player_name = player					
+					player_name = player
 				end						
 			elseif sort_value == 'defense' then -- sort by total parry/hit/evades/blocks
 				player_hits_received = get_player_stat_tally('parry',player) + get_player_stat_tally('hit',player) + get_player_stat_tally('evade',player) + get_player_stat_tally('block',player)
@@ -93,32 +93,33 @@ function get_sorted_players(sort_value,limit)
 					top_result = player_hits_received
 					player_name = player
 				end
-			elseif S{'ws','ja','spell','mb'}:contains(sort_value) and get_player_stat_avg(sort_value,player) then -- sort by avg
+			elseif T{'ws','ja','spell','mb'}:contains(sort_value) and get_player_stat_avg(sort_value,player) then -- sort by avg
 				if get_player_stat_avg(sort_value,player) > top_result and not sorted_player_table:contains(player) then
 					top_result = get_player_stat_avg(sort_value,player)
 					player_name = player
 				end				
-			elseif S{'hit','miss','nonblock','nonparry','r_miss','ws_miss','ja_miss','enfeeb','enfeeb_miss'}:contains(sort_value) then -- sort by tally
+			elseif T{'hit','miss','nonblock','nonparry','r_miss','ws_miss','ja_miss','enfeeb','enfeeb_miss'}:contains(sort_value) then -- sort by tally
 				if get_player_stat_tally(sort_value,player) > top_result and not sorted_player_table:contains(player) then
 					top_result = get_player_stat_tally(sort_value,player)
 					player_name = player
 				end		
-			elseif (S{'melee','ranged','crit','r_crit'}:contains(sort_value) or get_stat_type(sort_value)=="defense") and get_player_stat_percent(sort_value,player) then -- sort by percent
+			elseif (T{'melee','ranged','crit','r_crit'}:contains(sort_value) or get_stat_type(sort_value)=="defense") and get_player_stat_percent(sort_value,player) then -- sort by percent
 				if get_player_stat_percent(sort_value,player) > top_result and not sorted_player_table:contains(player) then
 					top_result = get_player_stat_percent(sort_value,player)
 					player_name = player
 				end	
-			elseif S{'sc','add','spike'}:contains(sort_value) then --sort by damage
+			elseif T{'sc','add','spike'}:contains(sort_value) then --sort by damage
 				if get_player_stat_damage(sort_value,player) > top_result and not sorted_player_table:contains(player) then
 					top_result = get_player_stat_damage(sort_value,player)
 					player_name = player
 				end	
 			end
 		end	
-		if player_name then sorted_player_table:append(player_name) end		
+		if player_name then
+			sorted_player_table:append(player_name)
+		end
 	end
 
-	
 	return sorted_player_table
 end
 
@@ -250,14 +251,15 @@ function get_player_stat_damage(stat,plyr,mob_filters)
 	return damage
 end
 
+
 function get_player_stat_avg(stat,plyr,mob_filters)
-    if S{'ws_miss','ja_miss','enfeeb','enfeeb_miss'}:contains(stat) then return nil end
+    if T{'ws_miss','ja_miss','enfeeb','enfeeb_miss'}:contains(stat) then return nil end
 	if type(stat)=='number' then stat=tostring(stat) end
 	local total,tally,result,digits = 0,0,0,0
 	
 	if stat=='multi' then
 		digits = 2
-		for i,__ in pairs(stat_types.multi) do
+		for _, i in pairs(stat_types.multi) do
 			total = total + (get_player_stat_tally(i,plyr,mob_filters) * tonumber(i))
 			tally = tally + get_player_stat_tally(i,plyr,mob_filters)
 		end
@@ -288,7 +290,7 @@ function get_player_stat_percent(stat,plyr,mob_filters)
 		divisor = get_player_stat_tally(stat,plyr,mob_filters)
 		
 		if percent_table[stat] then
-			for v,__ in pairs(percent_table[stat]) do
+			for _, v in pairs(percent_table[stat]) do
 				-- if string begins with +
 				if type(v)=='string' and v:startswith('+') then
 					dividend = dividend + get_player_stat_tally(string.sub(v,2),plyr,mob_filters)
@@ -308,13 +310,15 @@ function get_player_stat_percent(stat,plyr,mob_filters)
 
 	shift = 10 ^ digits
 	result = math.floor( (dividend / divisor) *shift + 0.5 ) / shift
-
-	return result * 100
+	
+	-- I'm not mathed enough to understand what flip was doing above... Sorry!
+	-- Round to 2 digits
+	return math.round(result * 10000) / 100
 end
 
 function get_player_damage(plyr,mob_filters)
 	local damage = 0
-	
+
 	for mob,players in pairs(database) do
 		if (mob_filters and mob==mob_filters) or (not mob_filters and check_filters('mob',mob)) then
 			for player,mob_player_table in pairs(players) do

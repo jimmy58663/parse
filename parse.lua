@@ -1,15 +1,7 @@
-_addon.version = '1.64'
-_addon.name = 'Parse'
-_addon.author = 'Flippant'
-_addon.commands = {'parse','p'}
-
-require 'tables'
-require 'sets'
-require 'strings'
-require 'actions'
-config = require('config')
-texts = require('texts')
-res = require 'resources'
+require('common')
+addon.name = 'Parse'
+addon.author = 'Flippant'
+addon.version = '1.0.0.0'
 
 messageColor = 200
 
@@ -29,7 +21,7 @@ default_settings.record = {
 		["pet"] = true,
 		["fellow"] = true
 	}
-default_settings.logger = S{"Flipp*"}
+default_settings.logger = {"Flipp*"}
 default_settings.label = {
 		["player"] = {red=100,green=200,blue=200},
 		["stat"] = {red=225,green=150,blue=0},
@@ -39,17 +31,17 @@ default_settings.display.melee = {
 		["visible"] = true,
 		["type"] = "offense",
 		["pos"] = {x=570,y=50},
-		["order"] = L{"damage","melee","ws"},
+		["order"] = {"damage","melee","ws"},
 		["max"] = 6,
 		["data_types"] = {
-			["damage"] = S{'total','total-percent'},
-			["melee"] = S{'percent'},
-			["miss"] = S{'tally'},
-			["crit"] = S{'percent'},
-			["ws"] = S{'avg'},
-			["ja"] = S{'avg'},
-			["multi"] = S{'avg'},
-			["ws_miss"] = S{'tally'}
+			["damage"] = {'total','total-percent'},
+			["melee"] = {'percent'},
+			["miss"] = {'tally'},
+			["crit"] = {'percent'},
+			["ws"] = {'avg'},
+			["ja"] = {'avg'},
+			["multi"] = {'avg'},
+			["ws_miss"] = {'tally'}
 		},
 		["bg"] = {visible=true,alpha=50,red=0,green=0,blue=0},
 		["text"] = {size=10,font="consolas",alpha=255,red=255,green=255,blue=255,stroke={width=1,alpha=200,red=0,green=0,blue=0}},
@@ -60,15 +52,15 @@ default_settings.display.defense = {
 		["visible"] = false,
 		["type"] = "defense",
 		["pos"] = {x=150,y=440},
-		["order"] = L{"block","hit","parry",},
+		["order"] = {"block","hit","parry",},
 		["max"] = 2,
 		["data_types"] = {
-			["block"] = S{'avg','percent'},
-			["evade"] = S{'percent'},
-			["hit"] = S{'avg'},
-			["parry"] = S{'percent'},
-			["absorb"] = S{'percent'},
-			["intimidate"] = S{'percent'},
+			["block"] = {'avg','percent'},
+			["evade"] = {'percent'},
+			["hit"] = {'avg'},
+			["parry"] = {'percent'},
+			["absorb"] = {'percent'},
+			["intimidate"] = {'percent'},
 		},
 		["bg"] = {visible=true,alpha=50,red=0,green=0,blue=0},
 		["text"] = {size=10,font="consolas",alpha=255,red=255,green=255,blue=255,stroke={width=1,alpha=200,red=0,green=0,blue=0}},
@@ -79,13 +71,13 @@ default_settings.display.ranged = {
 		["visible"] = false,
 		["type"] = "offense",
 		["pos"] = {x=570,y=200},
-		["order"] = L{"damage","ranged","ws"},
+		["order"] = {"damage","ranged","ws"},
 		["max"] = 6,
 		["data_types"] = {
-			["damage"] = S{'total','total-percent'},
-			["ranged"] = S{'percent'},
-			["r_crit"] = S{'percent'},
-			["ws"] = S{'avg'},
+			["damage"] = {'total','total-percent'},
+			["ranged"] = {'percent'},
+			["r_crit"] = {'percent'},
+			["ws"] = {'avg'},
 		},
 		["bg"] = {visible=true,alpha=50,red=0,green=0,blue=0},
 		["text"] = {size=10,font="consolas",alpha=255,red=255,green=255,blue=255,stroke={width=1,alpha=200,red=0,green=0,blue=0}},
@@ -96,20 +88,22 @@ default_settings.display.magic = {
 		["visible"] = false,
 		["type"] = "offense",
 		["pos"] = {x=570,y=50},		
-		["order"] = L{"damage","spell"},
+		["order"] = {"damage","spell"},
 		["max"] = 6,
 		["data_types"] = {
-			["damage"] = S{'total','total-percent'},
-			["spell"] = S{'avg'},
+			["damage"] = {'total','total-percent'},
+			["spell"] = {'avg'},
 		},
 		["bg"] = {visible=true,alpha=50,red=0,green=0,blue=0},
 		["text"] = {size=10,font="consolas",alpha=255,red=255,green=255,blue=255,stroke={width=1,alpha=200,red=0,green=0,blue=0}},
 		["padding"] = 4,
 		["flags"] = {draggable=true,right=false,bottom=false,bold=true}
 	}
-	
-settings = config.load(default_settings)
-config.save(settings)
+
+-- TODO: implement config
+settings = default_settings
+--settings = config.load(default_settings)
+--config.save(settings)
 
 update_tracker,update_interval = 0,settings.update_interval
 autoexport = nil
@@ -119,23 +113,23 @@ logging = true
 buffs = {["Palisade"] = false, ["Reprisal"] = false, ["Battuta"] = false, ["Retaliation"] = false}
 
 database = {}
-filters = {
-		['mob'] = S{},
-		['player'] = S{}
+filters = T{
+		['mob'] = {},
+		['player'] = {}
 	}
 renames = {}
 text_box = {}
 logs = {}
 
 stat_types = {}
-stat_types.defense = S{"hit","block","evade","parry","intimidate","absorb","shadow","anticipate","nonparry","nonblock","retrate","nonret"}
-stat_types.melee = S{"melee","miss","crit"}
-stat_types.ranged = S{"ranged","r_miss","r_crit"}
-stat_types.category = S{"ws","ja","spell","mb","enfeeb","ws_miss","ja_miss","enfeeb_miss"}
-stat_types.other = S{"spike","sc","add"}
-stat_types.multi = S{'1','2','3','4','5','6','7','8'}
+stat_types.defense = T{"hit","block","evade","parry","intimidate","absorb","shadow","anticipate","nonparry","nonblock","retrate","nonret"}
+stat_types.melee = T{"melee","miss","crit"}
+stat_types.ranged = T{"ranged","r_miss","r_crit"}
+stat_types.category = T{"ws","ja","spell","mb","enfeeb","ws_miss","ja_miss","enfeeb_miss"}
+stat_types.other = T{"spike","sc","add"}
+stat_types.multi = T{'1','2','3','4','5','6','7','8'}
 
-damage_types = S{"melee","crit","ranged","r_crit","ws","ja","spell","mb","spike","sc","add"}
+damage_types = T{"melee","crit","ranged","r_crit","ws","ja","spell","mb","spike","sc","add"}
 
 require 'utility'
 require 'retrieval'
@@ -144,8 +138,111 @@ require 'action_parse'
 require 'report'
 require 'file_handle'
 
-ActionPacket.open_listener(parse_action_packet)
+
+-- From Thorny
+local ffi = require("ffi");
+ffi.cdef[[
+    int32_t memcmp(const void* buff1, const void* buff2, size_t count);
+]];
+local lastChunkBuffer = T{};
+local currentChunkBuffer = T{};
+
+local function CheckForDuplicate(e)
+    --Check if new chunk..
+    if (ffi.C.memcmp(e.data_raw, e.chunk_data_raw, e.size) == 0) then
+        lastChunkBuffer = currentChunkBuffer;
+        currentChunkBuffer = T{};
+    end
+
+    --Add packet to current chunk's buffer..
+    local ptr = ffi.cast('uint8_t*', e.data_raw);
+    local newPacket = ffi.new('uint8_t[?]', 512);
+    ffi.copy(newPacket, ptr, e.size);
+    currentChunkBuffer:append(newPacket);
+
+    --Check if last chunk contained this packet..
+    for _,packet in ipairs(lastChunkBuffer) do
+        if (ffi.C.memcmp(packet, ptr, e.size) == 0) then
+            return true;
+        end
+    end
+    return false;
+end
+
+ashita.events.register('packet_in', 'packet_in_cb', function(e)
+	-- Thanks Thorny!
+	local isDuplicate = false
+	if (not e.injected) then
+		isDuplicate = CheckForDuplicate(e)
+	end
+
+	if e.id == 0x028 and not isDuplicate then -- Action packet
+		parse_action_packet(e.data)
+	end
+end)
+
 init_boxes()
+
+ashita.events.register('command', 'command_cb', function (e)
+    local args = e.command:args()
+    if args[1] == '/parse' then
+		if args[2] == "report" then
+			report_data(args[3],args[4],args[5],args[6])
+				return true
+		elseif (args[2] == 'filter' or args[2] == 'f') and args[2] then
+			edit_filters(args[3],args[4],args[5])
+			update_texts()
+			return true
+		elseif (args[2] == 'list' or args[2] == '2') then
+			print_list(args[3])
+		elseif (args[2] == 'show' or args[2] == 's' or args[2] == 'display' or args[2] == 'd') then
+			toggle_box(args[3])
+			update_texts()
+		elseif args[2] == 'reset' then
+			reset_parse()
+			update_texts()
+		elseif args[2] == 'rename' and args[3] and args[4] then
+			if args[4]:gsub('[%w_]','')=="" then
+				renames[args[3]:gsub("^%l", string.upper)] = args[4]
+				message('Data for player/mob '..args[3]:gsub("^%l", string.upper)..' will now be indexed as '..args[4])	
+				return
+			end
+			message('Invalid character found. You may only use alphanumeric characters or underscores.')
+		elseif args[2] == 'export' then
+			export_parse(args[3])
+		elseif args[2] == 'autoexport' then
+			if (autoexport and not args[3]) or args[3] == 'off' then
+				autoexport = nil message('Autoexport turned off.')
+			else
+				autoexport = args[3] or 'autoexport'
+				message('Autoexport now on. Saving under file name "'..autoexport..'" every '..autoexport_interval..' recorded actions.')
+			end
+		elseif args[2] == 'import' and args[3] then
+			import_parse(args[3])
+			update_texts()
+		elseif args[2] == 'log' then
+			if logging then logging=false message('Logging has been turned off.') else logging=true message('Logging has been turned on.') end
+		elseif args[2] == 'help' then
+			message('report [stat] [chatmode] : Reports stat to designated chatmode. Defaults to damage.')
+			message('filter/f [add/+ | remove/- | clear/reset] [string] : Adds/removes/clears mob filter.')
+			message('show/s [melee/ranged/magic/defense] : Shows/hides display box. "melee" is the default.')
+			message('pause/p : Pauses/unpauses parse. When paused, data is not recorded.')
+			message('reset :  Resets parse.')
+			message('rename [player name] [new name] : Renames a player or monster for NEW incoming data.')
+			message('import/export [file name] : Imports/exports an XML file to/from database. Only filtered monsters are exported.')
+			message('autoexport [file name] : Automatically exports an XML file every '..autoexport_interval..' recorded actions.')
+			message('log : Toggles logging feature.')
+			message('list/l [mobs/players] : Lists the mobs and players currently in the database. "mobs" is the default.')
+			message('interval [number] :  Defines how many actions it takes before displays are updated.')
+		else
+			message('That command was not found. Use /parse help for a list of commands.')
+		end
+    end
+    return false
+end)
+
+
+--[[
 
 windower.register_event('addon command', function(...)
     local args = {...}
@@ -206,6 +303,7 @@ windower.register_event('addon command', function(...)
 	end
 end )
 
+--]]
 tracked_buffs = {
 	[403] = "Reprisal",
 	[478] = "Palisade",
@@ -213,17 +311,17 @@ tracked_buffs = {
 	[405] = "Retaliation"
 }
 
-windower.register_event('gain buff', function(id)
-	if tracked_buffs[id] then
-		buffs[tracked_buffs[id]] = true
-	end
-end )
+--windower.register_event('gain buff', function(id)
+	--if tracked_buffs[id] then
+--		buffs[tracked_buffs[id]] = true
+--	end
+--end )
 
-windower.register_event('lose buff', function(id)
-	if tracked_buffs[id] then
-		buffs[tracked_buffs[id]] = true
-	end
-end )
+--windower.register_event('lose buff', function(id)
+	--if tracked_buffs[id] then
+--		buffs[tracked_buffs[id]] = true
+--	end
+--end )
 
 function get_stat_type(stat)
 	for stat_type,stats in pairs(stat_types) do
@@ -244,10 +342,10 @@ function toggle_box(box_name)
 	end
 	if text_box[box_name] then
 		if settings.display[box_name].visible then
-			text_box[box_name]:hide()
+			text_box[box_name].visible = false
 			settings.display[box_name].visible = false
 		else
-			text_box[box_name]:show()
+			text_box[box_name].visible = true
 			settings.display[box_name].visible = true
 		end
 	else
@@ -259,28 +357,45 @@ function edit_filters(filter_action,str,filter_type)
 	if not filter_type or not filters[filter_type] then
 		filter_type = 'mob'
 	end
-	
+
 	if filter_action=='add' or filter_action=="+" then
 		if not str then message("Please provide string to add to filters.") return end
-		filters[filter_type]:add(str)
+		table.insert(filters[filter_type],str)
 		message('"'..str..'" has been added to '..filter_type..' filters.')
 	elseif filter_action=='remove' or filter_action=="-" then
 		if not str then message("Please provide string to remove from filters.") return end
-		filters[filter_type]:remove(str)
+		
+		local i = 1
+		for k, v in pairs(filters[filter_type]) do
+			if v == str then
+				table.remove(filters[filter_type], i)
+				break
+			end
+			i = i + 1
+		end
+
 		message('"'..str..'" has been removed from '..filter_type..' filters.')
 	elseif filter_action=='clear' or filter_action=="reset" then
-		filters[filter_type] = S{}
+		filters[filter_type] = {}
 		message(filter_type..' filters have been cleared.')
 	end	
 end
 
 function get_filters()
 	local text = ""
-	if filters['mob'] and filters['mob']:tostring()~="{}" then
-		text = text .. ('Monsters: ' .. filters['mob']:tostring())
+
+	if filters['mob'] and getTableLength(filters['mob']) > 0 then
+		text = text .. 'Monsters:'
+		for k, v in pairs(filters['mob']) do
+			text = text .. ' ' .. v
+		end
 	end
-	if filters['player'] and filters['player']:tostring()~="{}" then
-		text = text .. ('\nPlayers: ' .. filters['player']:tostring())
+
+	if filters['player'] and getTableLength(filters['player']) > 0 then
+		text = text .. '\nPlayers:'
+		for k, v in pairs(filters['player']) do
+			text = text .. ' ' .. v
+		end
 	end
 	return text
 end
@@ -292,7 +407,7 @@ function print_list(list_type)
 		list_type="players"
 	end
 	
-	local lst = S{}
+	local lst = T{}
 	if list_type=='mobs' then
 		lst = get_mobs()
 	elseif list_type=='players' then
@@ -322,9 +437,10 @@ end
 
 -- Returns true if monster is not filtered, false if monster is filtered out
 function check_filters(filter_type,mob_name)
-	if not filters[filter_type] or filters[filter_type]:tostring()=="{}" then
-		return true
-	end
+-- FIXME: fix filters
+--	if not filters[filter_type] or filters[filter_type]:tostring()=="{}" then
+--		return true
+--	end
 
 	local response = false
 	local only_excludes = true
@@ -355,9 +471,15 @@ function check_filters(filter_type,mob_name)
 	return response
 end
 
-config.register(settings, function(settings)
-    update_texts:loop(settings.update_interval)
+local lastUpdate = os.time()
+ashita.events.register('d3d_present', 'present_cb', function()
+	if os.time() - lastUpdate > settings.update_interval then
+		update_texts()
+	end
 end)
+--config.register(settings, function(settings)
+--    update_texts:loop(settings.update_interval)
+--end)
 
 --Copyright (c) 2013~2016, F.R
 --All rights reserved.

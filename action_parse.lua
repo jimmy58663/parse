@@ -5,6 +5,9 @@
 	-- Need to count kicks
 
 ]]
+
+require('common')
+
 spike_effect_valid = {true,false,false,false,false,false,false,false,false,false,false,false,false,false,false}
 add_effect_valid = {true,true,true,true,false,false,false,false,false,false,true,false,true,false,false}
 skillchain_messages = T{288,289,290,291,292,293,294,295,296,297,298,299,300,301,302,385,386,387,388,389,390,391,392,393,394,395,396,397,398,732,767,768,769,770}
@@ -72,12 +75,95 @@ local offense_action_messages = {
 	[77] = 'Sange',
 	[264] = 'aoe'
 }
-                        
-function parse_action_packet(act)
+
+parser = require('parser') -- from atom0s
+
+-- See https://github.com/atom0s/XiPackets/tree/main/world/server/0x0028
+-- Converts to https://github.com/Windower/Lua/wiki/Action-Event (mostly)
+function parser_to_windower_act(data)
+	local parsed_packet = parser.parse(data)
+	local act = {}
+
+	-- Junk packet from server. Ignore it. (Thanks DSP!)
+	if parsed_packet.trg_sum == 0 then
+		return nil
+	end
+	
+	act.actor_id     = parsed_packet.m_uID
+	act.category     = parsed_packet.cmd_no
+	act.param        = parsed_packet.cmd_arg
+	act.target_count = parsed_packet.trg_sum
+	act.unknown      = 0 -- not necessary but FIXME?
+	act.recast       = parsed_packet.info
+	act.targets      = T{}
+	
+	for _, v in ipairs (parsed_packet.target) do
+		local target = T{}
+		
+		target.id           = v.m_uID
+		target.action_count = v.result_sum
+		target.actions      = T{}
+		for _, action in ipairs (v.result) do
+			local new_action = T{}
+			
+			new_action.reaction  = action.miss -- These values are different compared to windower, so the code outside of this function was adjusted.
+			new_action.animation = action.sub_kind
+			new_action.effect    = action.info
+			new_action.stagger   = action.scale
+			new_action.param     = action.value
+			new_action.message   = action.message
+			new_action.unknown   = action.bit
+
+			if action.has_proc then
+				new_action.has_add_effect       = true
+				new_action.add_effect_animation = action.proc_kind
+				new_action.add_effect_effect    = action.proc_info
+				new_action.add_effect_param     = action.proc_value
+				new_action.add_effect_message   = action.proc_message
+			else
+				new_action.has_add_effect       = false
+				new_action.add_effect_animation = 0
+				new_action.add_effect_effect    = 0
+				new_action.add_effect_param     = 0
+				new_action.add_effect_message   = 0
+			end
+			
+			if action.has_react then
+				new_action.has_spike_effect       = true
+				new_action.spike_effect_animation = action.react_kind
+				new_action.spike_effect_effect    = action.react_info
+				new_action.spike_effect_param     = action.react_value
+				new_action.spike_effect_message   = action.react_message
+			else 
+				new_action.has_spike_effect       = false
+				new_action.spike_effect_animation = 0
+				new_action.spike_effect_effect    = 0
+				new_action.spike_effect_param     = 0
+				new_action.spike_effect_message   = 0
+			end
+			
+			table.insert(target.actions, new_action)
+		end
+
+		table.insert(act.targets, target)
+	end
+	
+	return act
+end
+
+local res = {}
+
+res.action_messages = require('action_messages')
+
+function parse_action_packet(data)
 	if pause then return end
 	
-	local actionpacket = ActionPacket.new(act)	
-	local player = windower.ffxi.get_player()
+	local act = parser_to_windower_act(data)
+	if not act then
+		return
+	end
+	
+	local player = AshitaCore:GetMemoryManager():GetPlayer()
 	local NPC_name, PC_name
    
 	act.actor = player_info(act.actor_id)
@@ -93,6 +179,7 @@ function parse_action_packet(act)
         for n,m in pairs(targ.actions) do
             if m.message ~= 0 and res.action_messages[m.message] ~= nil then	
 				target = player_info(targ.id)
+
 				-- if mob is actor, record defensive data
 				if act.actor.type == 'mob' and settings.record[target.type] then
 					NPC_name = nickname(act.actor.name:gsub(" ","_"):gsub("'",""))
@@ -109,12 +196,12 @@ function parse_action_packet(act)
 					local action = defense_action_messages[m.message]
 					local engaged = (target.status==1) and true or false
 
-					if m.reaction == 12 and act.category == 1 then  --block
+					if m.reaction == 4 and act.category == 1 then  --block
 						register_data(NPC_name,PC_name,'block',m.param)
 						if engaged then
 							register_data(NPC_name,PC_name,'nonparry')
 						end
-					elseif m.reaction == 11 and act.category == 1 then  --parry
+					elseif m.reaction == 3 and act.category == 1 then  --parry
 						register_data(NPC_name,PC_name,'parry')
 					elseif action == 'hit' then --hit or crit
 						register_data(NPC_name,PC_name,action,m.param)
@@ -152,7 +239,7 @@ function parse_action_packet(act)
 
 					local action = offense_action_messages[m.message]
 
-					if T{'melee','crit','miss'}:contains(action) then
+					if T{"melee","crit","miss"}:contains(action) then
 						register_data(NPC_name,PC_name,action,m.param)
 						if m.animation==0 then --main hand
 							multihit_count = multihit_count + 1
@@ -263,9 +350,12 @@ function register_data(NPC_name,PC_name,stat,val,spell_type,spell_id)
 	
 	if stat_type == "category" then --handle WS, spells, and JA
 		if type(spell_id) == 'number' then
-			if spell_type == "ws" and res.weapon_skills[spell_id] then spell_name = res.weapon_skills[spell_id].english
-			elseif spell_type == "ja" and res.job_abilities[spell_id] then spell_name = res.job_abilities[spell_id].english
-			elseif spell_type == "spell" and res.spells[spell_id] then spell_name = res.spells[spell_id].english 
+			if spell_type == "ws" then
+				spell_name = AshitaCore:GetResourceManager():GetAbilityById(spell_id).Name[1]
+			elseif spell_type == "ja" then
+				spell_name = AshitaCore:GetResourceManager():GetAbilityById(spell_id + 0x200).Name[1]
+			elseif spell_type == "spell" then
+				spell_name = AshitaCore:GetResourceManager():GetSpellById(spell_id).Name[1]
 			else spell_name = "unknown" end
 		elseif type(spell_id) == 'string' then spell_name = spell_id end
 		
@@ -321,9 +411,10 @@ function register_data(NPC_name,PC_name,stat,val,spell_type,spell_id)
 		end	
 	end
 
-    if val and settings.logger:find(function(el) if PC_name==el or (el:endswith('*') and PC_name:startswith(tostring(el:gsub('*','')))) then return true end return false end) then
-        log_data(PC_name,NPC_name,stat,val,spell_name)
-    end
+-- FIXME when implementing loggin
+--    if val and settings.logger:find(function(el) if PC_name==el or (el:endswith('*') and PC_name:startswith(tostring(el:gsub('*','')))) then return true end return false end) then
+--        log_data(PC_name,NPC_name,stat,val,spell_name)
+--    end
 end
 
 
@@ -348,51 +439,89 @@ function get_shield()
 end
 
 
+-- from Thorny
+function GetIndexFromId(serverId)
+    local index = bit.band(serverId, 0x7FF);
+    local entMgr = AshitaCore:GetMemoryManager():GetEntity();
+    if (entMgr:GetServerId(index) == serverId) then
+        return index;
+    end
+    for i = 1,2303 do
+        if entMgr:GetServerId(i) == serverId then
+            return i;
+        end
+    end
+    return 0;
+end
+
 ---------------------------------------------------------
 -- Function credit to Byrth
 ---------------------------------------------------------
 function player_info(id)
-    local player_table = windower.ffxi.get_mob_by_id(id)
+    local player_table = {}
+	
     local typ,owner
-    
-    if player_table == nil then
+	
+	local idx = GetIndexFromId(id)
+	local entityManager = AshitaCore:GetMemoryManager():GetEntity()
+	
+    player_table.name = entityManager:GetName(idx)
+	player_table.id = idx
+	player_table.type='debug'
+	player_table.owner = nil
+	player_table.status = entityManager:GetStatus(idx)
+	
+    if player_table.name == nil then
         return {name=nil,id=nil,type='debug',owner=nil}
     end
-    
-    for i,v in pairs(windower.ffxi.get_party()) do
-        if type(v) == 'table' and v.mob and v.mob.id == player_table.id then           
-            if i == 'p0' then
-                typ = 'me'
-            elseif i:sub(1,1) == 'p' then
-                typ = 'party'
-				if player_table.is_npc then typ = 'trust' end
-            else
-				typ = 'alliance'
-            end
-        end
+	
+    local party = AshitaCore:GetMemoryManager():GetParty()
+	
+	local partyPets    = {}
+	local partyFellows = {}
+    for i = 0, 17 do
+		if party:GetMemberIsActive(i) == 1 then
+			local partyID = party:GetMemberTargetIndex(i)
+
+			if i == 0 and partyID == player_table.id then
+				typ = 'me'
+			elseif i > 0 and partyID == player_table.id then
+				typ = 'party'
+				
+				if i > 5 then
+					typ = 'alliance'
+				end
+				
+				-- dynamic entity
+				if player_table.id > 0x700 then
+					if entityManager:GetTrustOwnerTargetIndex(partyID) ~= 0 then
+						typ = 'trust'
+					end
+				end
+			end
+
+			partyPets[entityManager:GetPetTargetIndex(partyID)] = party:GetMemberName(i)
+			partyFellows[entityManager:GetFellowTargetIndex(partyID)] = party:GetMemberName(i)
+		end
     end
-    
+
     if not typ then
-        if player_table.is_npc then
-            if player_table.id%4096>2047 then
-                for i,v in pairs(windower.ffxi.get_party()) do
-                    if type(v) == 'table' and v.mob and v.mob.pet_index and v.mob.pet_index == player_table.index then
-                        typ = 'pet'
-						owner = v
-                    elseif type(v) == 'table' and v.mob and v.mob.fellow_index and v.mob.fellow_index == player_table.index then
-                        typ = 'fellow'
-                        owner = v
-                        break
-                    end
-                end
-            else
-                typ = 'mob'
-            end
-        else
+		if bit.band(entityManager:GetSpawnFlags(player_table.id), 0x10) ~= 0 then
+			typ = 'mob'
+		elseif partyPets[player_table.id] then
+			typ = 'pet'
+			owner = {}
+			owner.name = partyPets[player_table.id]
+		elseif partyFellows[player_table.id] then
+			typ = 'fellow'
+			owner = {}
+			owner.name = partyFellows[player_table.id]
+		else
             typ = 'other'
         end
     end
     if not typ then typ = 'debug' end
+	
     return {name=player_table.name,status=player_table.status,id=id,type=typ,owner=(owner or nil)}
 end
 

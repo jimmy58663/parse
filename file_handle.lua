@@ -4,11 +4,8 @@
 	
 ]]
 
-files = require('files')
-xml = require('xml')
-
-
-function import_parse(file_name)   
+function import_parse(file_name)
+--[[
 	local path = '/data/export/'..file_name
 	
 	import = files.new(path..'.xml', true)
@@ -41,9 +38,12 @@ function import_parse(file_name)
 	end
 
 	message('Parse ['..file_name..'] was imported to database!')
+	--]]
+	print("Parse import not implemented.")
 end
 
-function export_parse(file_name)   	
+function export_parse(file_name)
+	--[[
     if not windower.dir_exists(windower.addon_path..'data') then
         windower.create_dir(windower.addon_path..'data')
     end
@@ -81,8 +81,11 @@ function export_parse(file_name)
 	if get_filters()~="" then
 		message('Note that the database was filtered by [ '..get_filters()..' ]')
 	end
+	--]]
+	print("export_parse not implemented")
 end
 
+--[[
 function to_xml(t,indent_string)
 	local indent = indent_string or '    '
 	local xml_string = ""
@@ -101,10 +104,11 @@ function to_xml(t,indent_string)
 	
 	return xml_string
 end
-
+--]]
 ---------------------------------------------------------
 -- Function credit to the Windower Luacore config library
 ---------------------------------------------------------
+--[[
 function construct_database(node, settings, key, meta)
     settings = settings or T{}
     key = key or 'settings'
@@ -161,6 +165,7 @@ function construct_database(node, settings, key, meta)
 
     return t
 end
+--]]
 
 function log_data(player,mob,action_type,value,spellName)
     if not logging then return end
@@ -175,7 +180,7 @@ function log_data(player,mob,action_type,value,spellName)
         windower.create_dir(windower.addon_path..'data/log/'..windower.ffxi.get_player().name)
     end
 
-    local file = files.new('data/log/'..windower.ffxi.get_player().name..'/'..player..'_'..mob..'_'..action_type..'.log') 
+    local file = io.open('data/log/'..windower.ffxi.get_player().name..'/'..player..'_'..mob..'_'..action_type..'.log') 
     if not file:exists() then
         file:create()
     end
@@ -185,7 +190,7 @@ function log_data(player,mob,action_type,value,spellName)
         logs[player..'_'..mob..'_'..action_type] = true
     end
         
-    file:append('%s %s\n':format(spellName or '',value or ''))
+    file:append(string.format('%s %s\n',spellName or '',value or ''))
 end
 
 --Copyright (c) 2013~2016, F.R

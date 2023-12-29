@@ -7,19 +7,19 @@
 ]]
 
 function report_data(stat,ability,chatmode,chattarget)
-	local valid_chatmodes = S{'s','p','t','l','l2','echo'}
+	local valid_chatmodes = T{'s','p','t','l','l2','echo'}
 	-- If user doesn't enter a stat, then correct arguments
 	if not stat then
 		stat = 'damage'
 	elseif valid_chatmodes:contains(stat) then
 		chattarget = ability
 		chatmode = stat
-        	ability = nil
+        ability = nil
 		stat = 'damage'
-    	elseif valid_chatmodes:contains(ability) then
-        	chattarget = chatmode
-        	chatmode = ability
-        	ability = nil
+	elseif valid_chatmodes:contains(ability) then
+		chattarget = chatmode
+		chatmode = ability
+		ability = nil
 	end
 	if not valid_chatmodes[chatmode] then
 		chatmode = nil
@@ -32,21 +32,21 @@ function report_data(stat,ability,chatmode,chattarget)
 		chat_prefix = chatmode
 	end
 
-	if S{'acc','accuracy','hitrate'}:contains(stat) then
+	if T{'acc','accuracy','hitrate'}:contains(stat) then
 		stat = 'melee'
-	elseif S{'racc'}:contains(stat) then
+	elseif T{'racc'}:contains(stat) then
 		stat = 'ranged'
-	elseif S{'evasion','eva'}:contains(stat) then
+	elseif T{'evasion','eva'}:contains(stat) then
 		stat = 'evade'
 	end
 	
 	report_string = ""
-	sorted_players = L{}
+	sorted_players = {}
 	sorted_players = get_sorted_players(stat,20)
 
 	if stat == 'damage' then
 		report_string = report_string .. '[Total damage] '..update_filters()..' | '
-		for player in sorted_players:it() do
+		for _, player in ipairs(sorted_players) do
 			report_string = report_string .. (player..': '..get_player_stat_percent(stat,player)..'% ('..get_player_damage(player)..'), ')
 		end
 	elseif get_stat_type(stat)=='category' then		
@@ -54,7 +54,7 @@ function report_data(stat,ability,chatmode,chattarget)
         if ability then report_string = report_string .. '('..ability..') ' end
         report_string = report_string .. 'stats] '..update_filters()..' | '
         player_spell_table = get_player_spell_table(stat)
-        for player in sorted_players:it() do
+        for _, player in ipairs(sorted_players) do
             if not ability or (ability and player_spell_table[player][ability]) then
                 report_string = report_string .. (player..': ')
                 if not ability then
@@ -77,7 +77,7 @@ function report_data(stat,ability,chatmode,chattarget)
         end
 	elseif get_stat_type(stat)=='multi' or stat=='multi' then
 		report_string = report_string .. '[Reporting multihit stats] '..update_filters()..' | '
-		for player in sorted_players:it() do
+		for _, player in ipairs(sorted_players) do
 			report_string = report_string .. (player..': ')
 			report_string = report_string .. ('{Total} ')
 			report_string = report_string .. ('~'..get_player_stat_avg(stat,player)..'avg ')			
@@ -93,7 +93,7 @@ function report_data(stat,ability,chatmode,chattarget)
 		end
 	elseif get_stat_type(stat) then
 		report_string = report_string .. '[Reporting '..stat..' stats] '..update_filters()..' | '
-		for player in sorted_players:it() do
+		for _, player in ipairs(sorted_players) do
 			report_string = report_string .. (player..': ')
 			--report_string = report_string .. (get_player_stat_damage(stat,player)..' ')
 			if get_player_stat_percent(stat,player) then report_string = report_string .. (''..get_player_stat_percent(stat,player)..'% ') end
@@ -135,7 +135,7 @@ function prepare_string(str,cap)
 	str_table = str:split(' ')
 	str_table['n'] = nil
 	new_string = ""
-	new_table = L{}
+	new_table = T{}
 	
 	for i,word in pairs(str_table) do		
 		new_string = new_string .. word .. ' '
