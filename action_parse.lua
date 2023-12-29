@@ -350,13 +350,22 @@ function register_data(NPC_name,PC_name,stat,val,spell_type,spell_id)
 	
 	if stat_type == "category" then --handle WS, spells, and JA
 		if type(spell_id) == 'number' then
+			local spell           = nil
+			local resourceManager = AshitaCore:GetResourceManager()
+
 			if spell_type == "ws" then
-				spell_name = AshitaCore:GetResourceManager():GetAbilityById(spell_id).Name[1]
+				spell = resourceManager:GetAbilityById(spell_id)
 			elseif spell_type == "ja" then
-				spell_name = AshitaCore:GetResourceManager():GetAbilityById(spell_id + 0x200).Name[1]
+				spell = resourceManager:GetAbilityById(spell_id + 0x200)
 			elseif spell_type == "spell" then
-				spell_name = AshitaCore:GetResourceManager():GetSpellById(spell_id).Name[1]
-			else spell_name = "unknown" end
+				spell = resourceManager:GetSpellById(spell_id)
+			end
+
+			if spell and spell.Name[1] then
+				spell_name = spell.Name[1]
+			else
+				spell_name = "unknown"
+			end
 		elseif type(spell_id) == 'string' then spell_name = spell_id end
 		
 		if not spell_name then
