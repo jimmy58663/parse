@@ -21,9 +21,11 @@ function report_data(stat,ability,chatmode,chattarget)
 		chatmode = ability
 		ability = nil
 	end
-	if not valid_chatmodes[chatmode] then
+	
+	if not valid_chatmodes:contains(chatmode) then
 		chatmode = nil
 	end
+	
 	if chatmode == 't' then
         if chattarget then
         	chat_prefix = chatmode..' '..chattarget
@@ -116,13 +118,13 @@ function report_data(stat,ability,chatmode,chattarget)
 	
 	for i,line in pairs(report_table) do
 		if #line <= line_cap then
-			if chat_prefix then windower.send_command('input /'..chat_prefix..' '..line) coroutine.sleep(1.5)
+			if chat_prefix then AshitaCore:GetChatManager():QueueCommand(1, '/'..chat_prefix..' '..line) coroutine.sleep(1.5)
 			else message(line) end		
 		else
 			line_table = prepare_string(line,line_cap)
 			line_table['n'] = nil
 			for i,subline in pairs(line_table) do
-				if chat_prefix then windower.send_command('input /'..chat_prefix..' '..subline) coroutine.sleep(1.5)
+				if chat_prefix then AshitaCore:GetChatManager():QueueCommand(1, '/'..chat_prefix..' '..subline) coroutine.sleep(1.5)
 				else message(subline) end		
 			end
 		end
