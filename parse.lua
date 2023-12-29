@@ -444,7 +444,7 @@ function check_filters(filter_type,mob_name)
 
 	local response = false
 	local only_excludes = true
-	for v,__ in pairs(filters[filter_type]) do
+	for _, v in pairs(filters[filter_type]) do
 		if v:lower():startswith('!^') then --exact exclusion filter
 			if v:lower():gsub('%!',''):gsub('%^','')==mob_name:lower() then --immediately return false
 				return false
