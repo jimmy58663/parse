@@ -27,11 +27,7 @@ local fontsSettings = T{
 }
 
 function create_text(stat_type)
-	local textSettings = fontsSettings
-	textSettings.position_x = settings.display[stat_type].pos.x
-	textSettings.position_y = settings.display[stat_type].pos.y
-	text_box[stat_type] = fonts.new(textSettings)
-	text_box[stat_type].visible = false
+	text_box[stat_type] = fonts.new(settings.display[stat_type].fontsSettings)
 
 	update_text(stat_type)
 end
@@ -39,7 +35,12 @@ end
 function update_text(stat_type)    
 	-- Don't update if box wasn't properly added, there are no settings, or it is not set to visible
 	-- FIXME!!! check for logged in on ashita
-	if not text_box[stat_type] or not settings.display[stat_type] or not settings.display[stat_type].visible then
+	if
+		not text_box[stat_type]
+		or not settings.display[stat_type]
+		or not settings.display[stat_type].fontsSettings
+		or not settings.display[stat_type].fontsSettings.visible
+	then
 		return
 	end
 	
@@ -57,14 +58,13 @@ function update_text(stat_type)
 
 	-- add data to info table
 	for __,player_name in pairs(get_players()) do
-
 		if (settings.display and settings.display[stat_type]) then
 			to_be_sorted[player_name] = get_player_stat_tally('parry',player_name) + get_player_stat_tally('hit',player_name) + get_player_stat_tally('evade',player_name)
 			info[player_name] = ''..label_colors('player')..string.format('%-13s',player_name..' ')..'|r' 
 			for _, stat in ipairs(settings.display[stat_type].order) do
 				if settings.display[stat_type].data_types[stat] then
 					local d = {}
-					for _, report_type in pairs(settings.display[stat_type].data_types[stat]) do
+					for _, report_type in ipairs(settings.display[stat_type].data_types[stat]) do
 						if report_type=="total" then
 							local total = get_player_damage(player_name) -- getting player's damage
 							d[report_type] = total or "--"
@@ -144,10 +144,10 @@ end
 
 function format_display_head(box_name)
 	local text = string.format('%-13s',' ')
-	for _, stat in pairs(settings.display[box_name].order) do
+	for _, stat in ipairs(settings.display[box_name].order) do
 		if settings.display[box_name].data_types[stat] then
 			characters = 0
-			for i,v in pairs(settings.display[box_name].data_types[stat]) do
+			for i,v in ipairs(settings.display[box_name].data_types[stat]) do
 				characters = characters + 7
 				if i=='total' then characters = characters +1 end
 			end

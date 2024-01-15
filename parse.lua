@@ -1,11 +1,11 @@
 require('common')
 addon.name = 'Parse'
-addon.author = 'Flippant'
-addon.version = '0.981'
+addon.author = 'Flippant (Ported to Ashita by Wintersolstice)'
+addon.version = '0.982'
 
 messageColor = 200
 
-default_settings = {}
+default_settings = T{}
 default_settings.update_interval = 1
 default_settings.autoexport_interval = 500
 default_settings.debug = false
@@ -13,7 +13,7 @@ default_settings.index_shield = false
 default_settings.index_reprisal = true
 default_settings.index_palisade = true
 default_settings.index_battuta = true
-default_settings.record = {
+default_settings.record = T{
 		["me"] = true,
 		["party"] = true,
 		["trust"] = true,
@@ -21,89 +21,130 @@ default_settings.record = {
 		["pet"] = true,
 		["fellow"] = true
 	}
-default_settings.logger = {"Flipp*"}
-default_settings.label = {
+default_settings.logger = T{"Flipp*"}
+default_settings.label = T{
 		["player"] = {red=100,green=200,blue=200},
 		["stat"] = {red=225,green=150,blue=0},
 	}
-default_settings.display = {}
-default_settings.display.melee = {
+default_settings.display = T{}
+default_settings.display.melee = T{
+	["type"] = "offense",
+	["order"] = T{"damage","melee","ws"},
+	["max"] = 6,
+	["data_types"] = T{
+		["damage"] = T{[1] = 'total', [2] = 'total-percent'},
+		["melee"] = T{'percent'},
+		["miss"] = T{'tally'},
+		["crit"] = T{'percent'},
+		["ws"] = T{'avg'},
+		["ja"] = T{'avg'},
+		["multi"] = T{'avg'},
+		["ws_miss"] = T{'tally'}
+	},
+	["fontsSettings"] = T{
 		["visible"] = true,
-		["type"] = "offense",
-		["pos"] = {x=570,y=50},
-		["order"] = {"damage","melee","ws"},
-		["max"] = 6,
-		["data_types"] = {
-			["damage"] = {'total','total-percent'},
-			["melee"] = {'percent'},
-			["miss"] = {'tally'},
-			["crit"] = {'percent'},
-			["ws"] = {'avg'},
-			["ja"] = {'avg'},
-			["multi"] = {'avg'},
-			["ws_miss"] = {'tally'}
-		},
-		["bg"] = {visible=true,alpha=50,red=0,green=0,blue=0},
-		["text"] = {size=10,font="consolas",alpha=255,red=255,green=255,blue=255,stroke={width=1,alpha=200,red=0,green=0,blue=0}},
-		["padding"] = 4,
-		["flags"] = {draggable=true,right=false,bottom=false,bold=true}
-	}
+		["color"] = 0xFFFFFFFF,
+		["font_family"] = "consolas",
+		["font_height"] = 10,
+		["bold"] = true,
+		["color_outline"] = 0xC8000000,
+		["draw_flags"] = FontDrawFlags.Outlined,
+		["position_x"] = 570,
+		["position_y"] = 50,
+		["background"] = T{
+			["visible"] = true,
+			["color"] = 0x32000000,
+		}
+	},
+}
+
 default_settings.display.defense = {
-		["visible"] = false,
 		["type"] = "defense",
-		["pos"] = {x=150,y=440},
-		["order"] = {"block","hit","parry",},
+		["order"] = T{"block","hit","parry",},
 		["max"] = 2,
-		["data_types"] = {
-			["block"] = {'avg','percent'},
-			["evade"] = {'percent'},
-			["hit"] = {'avg'},
-			["parry"] = {'percent'},
-			["absorb"] = {'percent'},
-			["intimidate"] = {'percent'},
+		["data_types"] = T{
+			["block"] = T{'avg','percent'},
+			["evade"] = T{'percent'},
+			["hit"] = T{'avg'},
+			["parry"] = T{'percent'},
+			["absorb"] = T{'percent'},
+			["intimidate"] = T{'percent'},
 		},
-		["bg"] = {visible=true,alpha=50,red=0,green=0,blue=0},
-		["text"] = {size=10,font="consolas",alpha=255,red=255,green=255,blue=255,stroke={width=1,alpha=200,red=0,green=0,blue=0}},
-		["padding"] = 4,
-		["flags"] = {draggable=true,right=false,bottom=false,bold=true}
+		["fontsSettings"] = T{
+			["visible"] = false,
+			["color"] = 0xFFFFFFFF,
+			["font_family"] = "consolas",
+			["font_height"] = 10,
+			["bold"] = true,
+			["color_outline"] = 0xC8000000,
+			["draw_flags"] = FontDrawFlags.Outlined,
+			["position_x"] = 150,
+			["position_y"] = 440,
+			["background"] = T{
+				["visible"] = true,
+				["color"] = 0x32000000,
+			}
+		},
 	}
 default_settings.display.ranged = {
-		["visible"] = false,
 		["type"] = "offense",
-		["pos"] = {x=570,y=200},
-		["order"] = {"damage","ranged","ws"},
+		["pos"] = T{x=570,y=200},
+		["order"] = T{"damage","ranged","ws"},
 		["max"] = 6,
-		["data_types"] = {
-			["damage"] = {'total','total-percent'},
-			["ranged"] = {'percent'},
-			["r_crit"] = {'percent'},
-			["ws"] = {'avg'},
+		["data_types"] = T{
+			["damage"] = T{'total','total-percent'},
+			["ranged"] = T{'percent'},
+			["r_crit"] = T{'percent'},
+			["ws"] = T{'avg'},
 		},
-		["bg"] = {visible=true,alpha=50,red=0,green=0,blue=0},
-		["text"] = {size=10,font="consolas",alpha=255,red=255,green=255,blue=255,stroke={width=1,alpha=200,red=0,green=0,blue=0}},
-		["padding"] = 4,
-		["flags"] = {draggable=true,right=false,bottom=false,bold=true}
+		["fontsSettings"] = T{
+			["visible"] = false,
+			["color"] = 0xFFFFFFFF,
+			["font_family"] = "consolas",
+			["font_height"] = 10,
+			["bold"] = true,
+			["color_outline"] = 0xC8000000,
+			["draw_flags"] = FontDrawFlags.Outlined,
+			["position_x"] = 570,
+			["position_y"] = 200,
+			["background"] = T{
+				["visible"] = true,
+				["color"] = 0x32000000,
+			}
+		},
 	}
-default_settings.display.magic = {
-		["visible"] = false,
+default_settings.display.magic = T{
 		["type"] = "offense",
-		["pos"] = {x=570,y=50},		
 		["order"] = {"damage","spell"},
 		["max"] = 6,
-		["data_types"] = {
-			["damage"] = {'total','total-percent'},
-			["spell"] = {'avg'},
+		["data_types"] = T{
+			["damage"] = T{'total','total-percent'},
+			["spell"] = T{'avg'},
 		},
-		["bg"] = {visible=true,alpha=50,red=0,green=0,blue=0},
-		["text"] = {size=10,font="consolas",alpha=255,red=255,green=255,blue=255,stroke={width=1,alpha=200,red=0,green=0,blue=0}},
-		["padding"] = 4,
-		["flags"] = {draggable=true,right=false,bottom=false,bold=true}
+		["fontsSettings"] = T{
+			["visible"] = false,
+			["color"] = 0xFFFFFFFF,
+			["font_family"] = "consolas",
+			["font_height"] = 10,
+			["bold"] = true,
+			["color_outline"] = 0xC8000000,
+			["draw_flags"] = FontDrawFlags.Outlined,
+			["position_x"] = 570,
+			["position_y"] = 50,
+			["background"] = T{
+				["visible"] = true,
+				["color"] = 0x32000000,
+			}
+		},
 	}
 
--- TODO: implement config
-settings = default_settings
---settings = config.load(default_settings)
---config.save(settings)
+local settingsLib = require('settings')
+
+settings = settingsLib.load(default_settings)
+
+if not settings then
+	settings = default_settings
+end
 
 update_tracker,update_interval = 0,settings.update_interval
 autoexport = nil
@@ -341,12 +382,12 @@ function toggle_box(box_name)
 		box_name = 'melee'
 	end
 	if text_box[box_name] then
-		if settings.display[box_name].visible then
+		if settings.display[box_name].fontsSettings.visible then
 			text_box[box_name].visible = false
-			settings.display[box_name].visible = false
+			settings.display[box_name].fontsSettings.visible = false
 		else
 			text_box[box_name].visible = true
-			settings.display[box_name].visible = true
+			settings.display[box_name].fontsSettings.visible = true
 		end
 	else
 		message('That display was not found. Display names are: melee, defense, ranged, magic.')
@@ -477,6 +518,27 @@ ashita.events.register('d3d_present', 'present_cb', function()
 		update_texts()
 	end
 end)
+
+
+settingsLib.register('settings', 'settings_update', function(newSettings)
+	for box,__ in pairs(settings.display) do
+		settings.display[box].fontsSettings.position_x = text_box[box].position_x
+		settings.display[box].fontsSettings.position_y = text_box[box].position_y
+	end
+	settingsLib.save()
+end)
+
+ashita.events.register('unload', 'unload_cb', function ()
+	for box,__ in pairs(settings.display) do
+		settings.display[box].fontsSettings.position_x = text_box[box].position_x
+		settings.display[box].fontsSettings.position_y = text_box[box].position_y
+	end
+    settingsLib.save()
+end)
+
+ashita.events.register('mouse', 'mouse_cb', function (e)
+end)
+
 --config.register(settings, function(settings)
 --    update_texts:loop(settings.update_interval)
 --end)
