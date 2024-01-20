@@ -521,11 +521,12 @@ end)
 
 
 settingsLib.register('settings', 'settings_update', function(newSettings)
-	for box,__ in pairs(settings.display) do
-		settings.display[box].fontsSettings.position_x = text_box[box].position_x
-		settings.display[box].fontsSettings.position_y = text_box[box].position_y
-	end
-	settingsLib.save()
+    for boxName,boxData in pairs(newSettings.display) do
+        text_box[boxName].position_x = boxData.fontsSettings.position_x
+        text_box[boxName].position_y = boxData.fontsSettings.position_y
+        text_box[boxName].visible    = boxData.fontsSettings.visible
+    end
+    settingsLib.save()
 end)
 
 ashita.events.register('unload', 'unload_cb', function ()
