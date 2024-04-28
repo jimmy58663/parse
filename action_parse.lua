@@ -56,7 +56,8 @@ local defense_action_messages = {
 	[106] = 'intimidate', 
 	[15] = 'evade', [282] = 'evade',
 	[373] = 'absorb',
-	[536] = 'retaliate', [535] = 'retaliate'
+	[536] = 'retaliate', [535] = 'retaliate',
+    [33] = 'counter',
 }
 local offense_action_messages = {
 	[1] = 'melee',
@@ -179,6 +180,16 @@ function parse_action_packet(data)
 	for i,targ in pairs(act.targets) do
 		multihit_count,multihit_count2 = 0,0
         for n,m in pairs(targ.actions) do
+
+            -- special case for counters
+            if m.message == 0 and m.has_spike_effect and m.spike_effect_animation == 63 and m.spike_effect_message == 33 then
+                target = player_info(targ.id)
+				NPC_name = nickname(act.actor.name:gsub(" ","_"):gsub("'",""))
+				PC_name = construct_PC_name(target)
+
+                register_data(NPC_name,PC_name,'counter',m.spike_effect_param)
+            end
+
             if m.message ~= 0 and res.action_messages[m.message] ~= nil then	
 				target = player_info(targ.id)
 
@@ -198,13 +209,15 @@ function parse_action_packet(data)
 					local action = defense_action_messages[m.message]
 					local engaged = (target.status==1) and true or false
 
-					if m.reaction == 4 and act.category == 1 then  --block
+					if m.reaction == 4 and act.category == 1 then --block
 						register_data(NPC_name,PC_name,'block',m.param)
 						if engaged then
 							register_data(NPC_name,PC_name,'nonparry')
 						end
-					elseif m.reaction == 3 and act.category == 1 then  --parry
+					elseif m.reaction == 3 and act.category == 1 then --parry
 						register_data(NPC_name,PC_name,'parry')
+					elseif m.reaction == 2 and act.category == 1 then --guard
+						register_data(NPC_name,PC_name,'guard', m.param)
 					elseif action == 'hit' then --hit or crit
 						register_data(NPC_name,PC_name,action,m.param)
 						if engaged then
@@ -216,7 +229,7 @@ function parse_action_packet(data)
 						if act.category == 1 then
 							register_data(NPC_name,PC_name,'nonblock',m.param)
 						end
-					elseif T{'intimidate','evade'}:contains(action) then  --intimidate
+					elseif T{'intimidate','evade'}:contains(action) then --intimidate
 						register_data(NPC_name,PC_name,action)
 					end
 
@@ -278,7 +291,7 @@ function parse_action_packet(data)
 					end
 					
 					if m.has_spike_effect and m.spike_effect_message ~= 0 and spike_effect_valid[act.category] then --defensive data (when mob counters, has blazespikes, etc.) // Can you block a counter, and can I tell that you blocked a counter?
-						--debug('Monster spikes: Effect: '..m.spike_effect_effect)
+						--print('Monster spikes: Effect: '..m.spike_effect_effect)
 					end
 				end				
 			end

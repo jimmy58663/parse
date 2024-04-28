@@ -13,6 +13,8 @@ percent_table = {
 		block = T{"nonblock"},
 		absorb = T{"hit","block"},
 		retrate = T{"nonret"},
+        guard = T{"nonparry"},
+        counter = T{"nonparry"},
 	
 		melee = T{"miss","+crit"},
 		crit = T{"melee"},
@@ -87,8 +89,8 @@ function get_sorted_players(sort_value,limit)
 					top_result = get_player_damage(player)
 					player_name = player
 				end						
-			elseif sort_value == 'defense' then -- sort by total parry/hit/evades/blocks
-				player_hits_received = get_player_stat_tally('parry',player) + get_player_stat_tally('hit',player) + get_player_stat_tally('evade',player) + get_player_stat_tally('block',player)
+			elseif sort_value == 'defense' then -- sort by total parry/hit/evades/blocks/guards
+				player_hits_received = get_player_stat_tally('parry',player) + get_player_stat_tally('hit',player) + get_player_stat_tally('evade',player) + get_player_stat_tally('block',player) + get_player_stat_tally('guard',player) + get_player_stat_tally('counter',player)
 				if player_hits_received > top_result and not sorted_player_table:contains(player) then
 					top_result = player_hits_received
 					player_name = player

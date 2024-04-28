@@ -60,13 +60,15 @@ default_settings.display.melee = T{
 
 default_settings.display.defense = {
 		["type"] = "defense",
-		["order"] = T{"block","hit","parry",},
+		["order"] = T{"block","hit","parry","guard","counter"},
 		["max"] = 2,
 		["data_types"] = T{
 			["block"] = T{'avg','percent'},
 			["evade"] = T{'percent'},
 			["hit"] = T{'avg'},
 			["parry"] = T{'percent'},
+			["guard"] = T{'avg', 'percent'},
+			["counter"] = T{'avg', 'percent'},
 			["absorb"] = T{'percent'},
 			["intimidate"] = T{'percent'},
 		},
@@ -163,7 +165,7 @@ text_box = {}
 logs = {}
 
 stat_types = {}
-stat_types.defense = T{"hit","block","evade","parry","intimidate","absorb","shadow","anticipate","nonparry","nonblock","retrate","nonret"}
+stat_types.defense = T{"hit","block","evade","parry","intimidate","absorb","shadow","anticipate","nonparry","nonblock","retrate","nonret","guard","counter"}
 stat_types.melee = T{"melee","miss","crit"}
 stat_types.ranged = T{"ranged","r_miss","r_crit"}
 stat_types.category = T{"ws","ja","spell","mb","enfeeb","ws_miss","ja_miss","enfeeb_miss"}
