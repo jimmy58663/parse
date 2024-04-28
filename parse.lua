@@ -172,7 +172,7 @@ stat_types.category = T{"ws","ja","spell","mb","enfeeb","ws_miss","ja_miss","enf
 stat_types.other = T{"spike","sc","add"}
 stat_types.multi = T{'1','2','3','4','5','6','7','8'}
 
-damage_types = T{"melee","crit","ranged","r_crit","ws","ja","spell","mb","spike","sc","add"}
+damage_types = T{"melee","crit","ranged","r_crit","ws","ja","spell","mb","spike","sc","add","counter","retaliation"}
 
 require 'utility'
 require 'retrieval'
