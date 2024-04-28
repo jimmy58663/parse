@@ -105,7 +105,7 @@ function report_data(stat,ability,chatmode,chattarget)
 		end
 	else
 		message('That stat was not found. Reportable stats include:')
-		message('damage, melee, multi, crit, miss, ranged, r_crit, r_miss, spike, sc, add, hit, block, evade, parry, intimidate, absorb, ws, ja, spell')
+		message('damage, melee, multi, crit, miss, ranged, r_crit, r_miss, spike, sc, add, hit, block, evade, parry, guard, counter, intimidate, absorb, ws, ja, spell')
 		return
 	end
 	
