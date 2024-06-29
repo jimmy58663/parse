@@ -277,6 +277,13 @@ ashita.events.register('command', 'command_cb', function (e)
 			message('log : Toggles logging feature.')
 			message('list/l [mobs/players] : Lists the mobs and players currently in the database. "mobs" is the default.')
 			message('interval [number] :  Defines how many actions it takes before displays are updated.')
+			message('save: Saves the position of the parse windows.')
+		elseif args[2] == 'save' then
+			for box,__ in pairs(settings.display) do
+				settings.display[box].fontsSettings.position_x = text_box[box].position_x
+				settings.display[box].fontsSettings.position_y = text_box[box].position_y
+			end
+			settingsLib.save()
 		else
 			message('That command was not found. Use /parse help for a list of commands.')
 		end
