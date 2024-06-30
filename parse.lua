@@ -3,6 +3,7 @@ addon.name = 'Parse'
 addon.author = 'Flippant (Ported to Ashita by Wintersolstice)'
 addon.version = '0.985'
 
+local imgui = require('imgui')
 messageColor = 200
 
 default_settings = T{}
@@ -139,6 +140,18 @@ default_settings.display.magic = T{
 			}
 		},
 	}
+default_settings.imgui_display = T{
+	visible = T{true},
+	opacity = T{1.0},
+	padding = T{1.0},
+	scale = T{1.0},
+	font_scale = T{1.0},
+	x = T{100},
+	y = T{100},
+	width = T{325},
+	height = T{275},
+	active_tab = '',
+}
 
 local settingsLib = require('settings')
 
@@ -525,6 +538,7 @@ local lastUpdate = os.time()
 ashita.events.register('d3d_present', 'present_cb', function()
 	if os.time() - lastUpdate > settings.update_interval then
 		update_texts()
+		update_display()
 	end
 end)
 

@@ -5,6 +5,7 @@
 ]]
 
 local fonts = require("fonts")
+local imgui = require("imgui")
 
 function init_boxes()
 	for box,__ in pairs(settings.display) do
@@ -225,7 +226,6 @@ function update_filters()
 	return text
 end
 
-
 --Copyright (c) 2013~2016, F.R
 --All rights reserved.
 
@@ -251,3 +251,165 @@ end
 --ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 --(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 --SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+local function get_color_float(value)
+	if (value == 255) then
+		return 1.0
+	else
+		return (value / 256)
+	end
+end
+
+local function format_imgui_head(box_name)
+	local text = string.format('%-13s',' ')
+	for _, stat in ipairs(settings.display[box_name].order) do
+		if settings.display[box_name].data_types[stat] then
+			local characters = 0
+			for i,v in ipairs(settings.display[box_name].data_types[stat]) do
+				characters = characters + 7
+				if i=='total' then characters = characters +1 end
+			end
+			text =  text .. string.format('%-'..characters..'s',stat)
+		end
+	end
+	return text
+end
+
+local function format_tab(stat_type)
+	local info = {}
+	local head = T{}
+	local to_be_sorted = {}
+	local sorted_players = T{}
+	local all_damage = 0
+	local sort_type = "damage"
+	if (stat_type == 'defense') then
+		sort_type = 'defense'
+	end
+	local player_label_color = {
+		get_color_float(settings.label['player'].red),
+		get_color_float(settings.label['stat'].green),
+		get_color_float(settings.label['player'].blue),
+		1.0
+	}
+
+	local stat_label_color = {
+		get_color_float(settings.label['stat'].red),
+		get_color_float(settings.label['stat'].green),
+		get_color_float(settings.label['stat'].blue),
+		1.0
+	}
+
+	-- add data to info table
+	for __,player_name in pairs(get_players()) do
+		if (settings.display[stat_type]) then
+			to_be_sorted[player_name] = get_player_stat_tally('parry',player_name) + get_player_stat_tally('hit',player_name) + get_player_stat_tally('evade',player_name)
+			info[player_name] = string.format('%-13s',player_name..' ')
+			for _, stat in ipairs(settings.display[stat_type].order) do
+				if settings.display[stat_type].data_types[stat] then
+					local d = {}
+					for _, report_type in ipairs(settings.display[stat_type].data_types[stat]) do
+						if report_type=="total" then
+							local total = get_player_damage(player_name) -- getting player's damage
+							d[report_type] = total or "--"
+							all_damage = all_damage + total
+							if sort_type=='damage' then to_be_sorted[player_name] = total end
+						elseif report_type=="total-percent" then
+							d[report_type] = get_player_stat_percent(stat,player_name) or "--"
+							--d[report_type] = (total or get_player_damage(player_name)) / get_player_damage() or "--"
+						elseif report_type=="avg" then
+							d[report_type] = get_player_stat_avg(stat,player_name) or "--"
+						elseif report_type=="percent" then
+							d[report_type] = get_player_stat_percent(stat,player_name) or "--"
+						elseif report_type=="tally" then
+							d[report_type] = get_player_stat_tally(stat,player_name) or "--"
+						elseif report_type=="damage" then
+							d[report_type] = get_player_stat_damage(player_name) or "--"
+						else
+							d[report_type] = "--"
+						end
+					end
+
+					info[player_name] = info[player_name] .. (format_display_data(d))
+				end
+			end
+		end
+	end
+
+	-- sort players
+	for i=1,settings.display[stat_type].max,1 do
+		local p_name = nil
+		local top_result = 0
+		for player_name,sort_num in pairs(to_be_sorted) do
+			if sort_num > top_result and not sorted_players:contains(player_name) then
+				top_result = sort_num
+				p_name = player_name
+			end
+		end
+		if p_name then sorted_players:append(p_name) end
+	end
+
+	--[[head:append('[ ${title} ] ${filters} ${pause}')
+	info['title'] = stat_type
+
+	info['filters'] = update_filters()
+
+	if pause then
+		info['pause'] = "- PARSE PAUSED -"
+	end
+
+	head:append('${header}')
+	info['header'] = format_display_head(stat_type)
+
+	if sorted_players:length() == 0 then
+		head:append('No data found')
+	end--]]
+
+	imgui.Text(string.format('[ %s ] %s %s\n', stat_type, update_filters(), pause and "- PARSE PAUSED -" or ""))-- header
+	imgui.TextColored(stat_label_color, format_imgui_head(stat_type))
+	--imgui.Text(format_imgui_head(stat_type))
+
+	for _, player in pairs(sorted_players) do
+		imgui.Text(info[player])
+	end
+end
+
+function update_display()
+	local display = settings.imgui_display
+	--Don't render display if it is set to not visible
+	if (not display.visible[1]) then return; end
+
+	--Don't render display if Ashita is currently hiding font objects
+	if (not AshitaCore:GetFontManager():GetVisible()) then return; end
+
+	imgui.SetNextWindowBgAlpha(display.opacity[1])
+	imgui.SetNextWindowSize({display.width[1], display.height[1]})
+	if (imgui.Begin('Parse', display.visible[1], bit.bor(ImGuiWindowFlags_NoDecoration,
+														ImGuiWindowFlags_NoFocusOnAppearing,
+														ImGuiWindowFlags_NoNav))) then
+		imgui.SetWindowFontScale(display.font_scale[1])
+		if (imgui.BeginTabBar('##ParseTabBar', ImGuiTabBarFlags_NoCloseWithMiddleMouseButton)) then
+
+			if (imgui.BeginTabItem('Melee', nil)) then
+				display.active_tab = 'melee'
+				format_tab('melee')
+				imgui.EndTabItem()
+			end
+			if (imgui.BeginTabItem('Defense', nil)) then
+				display.active_tab = 'defense'
+				format_tab('defense')
+				imgui.EndTabItem()
+			end
+			if (imgui.BeginTabItem('Ranged', nil)) then
+				display.active_tab = 'ranged'
+				format_tab('ranged')
+				imgui.EndTabItem()
+			end
+			if (imgui.BeginTabItem('Magic', nil)) then
+				display.active_tab = 'magic'
+				format_tab('magic')
+				imgui.EndTabItem()
+			end
+			imgui.EndTabBar()
+		end
+	end
+	imgui.End()
+end
