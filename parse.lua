@@ -3,7 +3,8 @@ addon.name = 'Parse'
 addon.author = 'Flippant (Ported to Ashita by Wintersolstice)'
 addon.version = '0.985'
 
-local imgui = require('imgui')
+local logged_in = false
+
 messageColor = 200
 
 default_settings = T{}
@@ -234,6 +235,22 @@ ashita.events.register('packet_in', 'packet_in_cb', function(e)
 
 	if e.id == 0x028 and not isDuplicate then -- Action packet
 		parse_action_packet(e.data)
+	end
+
+	--Handle hiding/showing display based on Zone Enter and Exit based on libs/settings.lua and Thorny
+	-- Packet: Zone Enter
+	if (e.id == 0x000A) then
+		if (not logged_in) then
+			logged_in = true
+			settings.imgui_display.visible[1] = true
+		end
+	end
+	-- Packet: Zone Exit
+	if (e.id == 0x000B) then
+		if (struct.unpack('b', e.data, 0x04 + 0x01) == 1 and logged_in) then
+			logged_in = false
+			settings.imgui_display.visible[1] = false
+		end
 	end
 end)
 
@@ -592,3 +609,16 @@ end)
 --ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 --(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 --SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+ashita.events.register('load', 'load_cb', function()
+	--Hides the display if character is not logged in yet
+	local login_status = AshitaCore:GetMemoryManager():GetPlayer():GetLoginStatus()
+	if (login_status == 2) then
+		settings.imgui_display.visible[1] = true
+		logged_in = true
+	else
+		settings.imgui_display.visible[1] = false
+		logged_in = false
+	end
+end)
+
