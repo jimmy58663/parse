@@ -3,6 +3,7 @@ addon.name = 'Parse'
 addon.author = 'Flippant (Ported to Ashita by Wintersolstice)'
 addon.version = '0.985'
 
+local chat = require('chat');
 local logged_in = false
 
 messageColor = 200
@@ -61,86 +62,86 @@ default_settings.display.melee = T{
 }
 
 default_settings.display.defense = {
-		["type"] = "defense",
-		["order"] = T{"block","hit","parry","guard","counter"},
-		["max"] = 2,
-		["data_types"] = T{
-			["block"] = T{'avg','percent'},
-			["evade"] = T{'percent'},
-			["hit"] = T{'avg'},
-			["parry"] = T{'percent'},
-			["guard"] = T{'avg', 'percent'},
-			["counter"] = T{'avg', 'percent'},
-			["absorb"] = T{'percent'},
-			["intimidate"] = T{'percent'},
-		},
-		["fontsSettings"] = T{
-			["visible"] = false,
-			["color"] = 0xFFFFFFFF,
-			["font_family"] = "consolas",
-			["font_height"] = 10,
-			["bold"] = true,
-			["color_outline"] = 0xC8000000,
-			["draw_flags"] = FontDrawFlags.Outlined,
-			["position_x"] = 150,
-			["position_y"] = 440,
-			["background"] = T{
-				["visible"] = true,
-				["color"] = 0x32000000,
-			}
-		},
-	}
+	["type"] = "defense",
+	["order"] = T{"block","hit","parry","guard","counter"},
+	["max"] = 2,
+	["data_types"] = T{
+		["block"] = T{'avg','percent'},
+		["evade"] = T{'percent'},
+		["hit"] = T{'avg'},
+		["parry"] = T{'percent'},
+		["guard"] = T{'avg', 'percent'},
+		["counter"] = T{'avg', 'percent'},
+		["absorb"] = T{'percent'},
+		["intimidate"] = T{'percent'},
+	},
+	["fontsSettings"] = T{
+		["visible"] = false,
+		["color"] = 0xFFFFFFFF,
+		["font_family"] = "consolas",
+		["font_height"] = 10,
+		["bold"] = true,
+		["color_outline"] = 0xC8000000,
+		["draw_flags"] = FontDrawFlags.Outlined,
+		["position_x"] = 150,
+		["position_y"] = 440,
+		["background"] = T{
+			["visible"] = true,
+			["color"] = 0x32000000,
+		}
+	},
+}
 default_settings.display.ranged = {
-		["type"] = "offense",
-		["pos"] = T{x=570,y=200},
-		["order"] = T{"damage","ranged","ws"},
-		["max"] = 6,
-		["data_types"] = T{
-			["damage"] = T{'total','total-percent'},
-			["ranged"] = T{'percent'},
-			["r_crit"] = T{'percent'},
-			["ws"] = T{'avg'},
-		},
-		["fontsSettings"] = T{
-			["visible"] = false,
-			["color"] = 0xFFFFFFFF,
-			["font_family"] = "consolas",
-			["font_height"] = 10,
-			["bold"] = true,
-			["color_outline"] = 0xC8000000,
-			["draw_flags"] = FontDrawFlags.Outlined,
-			["position_x"] = 570,
-			["position_y"] = 200,
-			["background"] = T{
-				["visible"] = true,
-				["color"] = 0x32000000,
-			}
-		},
-	}
+	["type"] = "offense",
+	["pos"] = T{x=570,y=200},
+	["order"] = T{"damage","ranged","ws"},
+	["max"] = 6,
+	["data_types"] = T{
+		["damage"] = T{'total','total-percent'},
+		["ranged"] = T{'percent'},
+		["r_crit"] = T{'percent'},
+		["ws"] = T{'avg'},
+	},
+	["fontsSettings"] = T{
+		["visible"] = false,
+		["color"] = 0xFFFFFFFF,
+		["font_family"] = "consolas",
+		["font_height"] = 10,
+		["bold"] = true,
+		["color_outline"] = 0xC8000000,
+		["draw_flags"] = FontDrawFlags.Outlined,
+		["position_x"] = 570,
+		["position_y"] = 200,
+		["background"] = T{
+			["visible"] = true,
+			["color"] = 0x32000000,
+		}
+	},
+}
 default_settings.display.magic = T{
-		["type"] = "offense",
-		["order"] = {"damage","spell"},
-		["max"] = 6,
-		["data_types"] = T{
-			["damage"] = T{'total','total-percent'},
-			["spell"] = T{'avg'},
-		},
-		["fontsSettings"] = T{
-			["visible"] = false,
-			["color"] = 0xFFFFFFFF,
-			["font_family"] = "consolas",
-			["font_height"] = 10,
-			["bold"] = true,
-			["color_outline"] = 0xC8000000,
-			["draw_flags"] = FontDrawFlags.Outlined,
-			["position_x"] = 570,
-			["position_y"] = 50,
-			["background"] = T{
-				["visible"] = true,
-				["color"] = 0x32000000,
-			}
-		},
-	}
+	["type"] = "offense",
+	["order"] = {"damage","spell"},
+	["max"] = 6,
+	["data_types"] = T{
+		["damage"] = T{'total','total-percent'},
+		["spell"] = T{'avg'},
+	},
+	["fontsSettings"] = T{
+		["visible"] = false,
+		["color"] = 0xFFFFFFFF,
+		["font_family"] = "consolas",
+		["font_height"] = 10,
+		["bold"] = true,
+		["color_outline"] = 0xC8000000,
+		["draw_flags"] = FontDrawFlags.Outlined,
+		["position_x"] = 570,
+		["position_y"] = 50,
+		["background"] = T{
+			["visible"] = true,
+			["color"] = 0x32000000,
+		}
+	},
+}
 default_settings.imgui_display = T{
 	visible = T{true},
 	opacity = T{1.0},
@@ -152,6 +153,70 @@ default_settings.imgui_display = T{
 	width = T{325},
 	height = T{275},
 	active_tab = '',
+	melee = T{
+		columns = T{
+			['Dmg%'] = {
+				stat = 'damage',
+				report_type = 'total-percent',},
+			['Damage'] = {
+				stat = 'damage',
+				report_type = 'total',},
+			['Acc%'] = {
+				stat = 'melee',
+				report_type = 'percent',},
+			['WSAvg'] = {
+				stat = 'ws',
+				report_type = 'avg',}
+		},
+	},
+	defense = T{
+		columns = T{
+			['HitAvg'] = {
+				stat = 'hit',
+				report_type = 'avg'},
+			['Blk%'] = {
+				stat = 'block',
+				report_type = 'percent'},
+			['Parry%'] = {
+				stat = 'parry',
+				report_type = 'percent'},
+			['Guard%'] = {
+				stat = 'guard',
+				report_type = 'percent'},
+			['Counter%'] = {
+				stat = 'counter',
+				report_type = 'percent'}
+		},
+	},
+	ranged = T{
+		columns = T{
+			['Dmg%'] = {
+				stat = 'damage',
+				report_type = 'percent'},
+			['Damage'] = {
+				stat = 'damage',
+				report_type = 'total'},
+			['Acc%'] = {
+				stat = 'ranged',
+				report_type = 'percent'},
+			['WSAvg'] = {
+				stat = 'ws',
+				report_type = 'avg'}
+		},
+	},
+	magic = T{
+		columns = T{
+			['Dmg%'] = {
+				stat = 'damage',
+				report_type = 'percent'},
+			['Damage'] = {
+				stat = 'damage',
+				report_type = 'total'},
+			['SpellAvg'] = {
+				stat = 'spell',
+				report_type = 'avg'}
+		},
+	}
 }
 
 local settingsLib = require('settings')
