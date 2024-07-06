@@ -3,7 +3,8 @@ addon.name = 'Parse'
 addon.author = 'Flippant (Ported to Ashita by Wintersolstice)'
 addon.version = '0.985'
 
-local chat = require('chat');
+local chat = require('chat')
+local display = require('display')
 local logged_in = false
 
 messageColor = 200
@@ -33,7 +34,7 @@ default_settings.display = T{}
 default_settings.display.melee = T{
 	["type"] = "offense",
 	["order"] = T{"damage","melee","ws"},
-	["max"] = 6,
+	["max"] = 22,
 	["data_types"] = T{
 		["damage"] = T{[1] = 'total', [2] = 'total-percent'},
 		["melee"] = T{'percent'},
@@ -64,7 +65,7 @@ default_settings.display.melee = T{
 default_settings.display.defense = {
 	["type"] = "defense",
 	["order"] = T{"block","hit","parry","guard","counter"},
-	["max"] = 2,
+	["max"] = 5,
 	["data_types"] = T{
 		["block"] = T{'avg','percent'},
 		["evade"] = T{'percent'},
@@ -143,11 +144,14 @@ default_settings.display.magic = T{
 	},
 }
 default_settings.imgui_display = T{
+	enable_imgui = T{true},
 	visible = T{true},
 	opacity = T{1.0},
 	padding = T{1.0},
 	scale = T{1.0},
 	font_scale = T{1.0},
+	font_color = {0.0, 0.0, 0.0, 1.0},
+	use_job_colors = T{true},
 	x = T{100},
 	y = T{100},
 	width = T{325},
@@ -216,7 +220,59 @@ default_settings.imgui_display = T{
 				stat = 'spell',
 				report_type = 'avg'}
 		},
+	},
+	colors = T{
+		-- Color names from https://htmlcolorcodes.com/colors/ and https://htmlcolorcodes.com/color-names/
+		[1] = {0.533, 0.031, 0.031, 1.000}, -- Warrior -- Blood Red
+		[2] = {0.953, 0.641, 0.375, 1.000}, -- Monk -- Sandy Brown
+		[3] = {1.000, 0.977, 0.977, 1.000}, -- White Mage -- Snow
+		[4] = {0.281, 0.238, 0.543, 1.000}, -- Black Mage -- Dark Slate Blue
+		[5] = {0.604, 0.165, 0.165, 1.000}, -- Red Mage -- Garnet
+		[6] = {0.234, 0.699, 0.441, 1.000}, -- Thief -- Medium Sea Green
+		[7] = {0.886, 0.875, 0.824, 1.000}, -- Paladin -- Pearl
+		[8] = {0.216, 0.216, 0.275, 1.000}, -- Dark Knight -- 55,55,70
+		[9] = {0.545, 0.271, 0.075, 1.000}, -- Beast Master -- Saddle Brown
+		[10] = {0.973, 0.871, 0.494, 1.000}, -- Bard -- Jasmine
+		[11] = {0.000, 0.391, 0.000, 1.000}, -- Ranger -- Dark Green
+		[12] = {0.031, 0.561, 0.561, 1.000}, -- Samurai -- Blue Green
+		[13] = {0.443, 0.475, 0.494, 1.000}, -- Ninja -- Steel Gray
+		[14] = {0.541, 0.169, 0.886, 1.000}, -- Dragoon -- Blue Violet
+		[15] = {0.000, 0.500, 0.500, 1.000}, -- Summoner -- Teal
+		[16] = {0.391, 0.582, 0.926, 1.000}, -- Blue Mage -- Cornflower Blue
+		[17] = {0.500, 0.000, 0.500, 1.000}, -- Corsair -- Purple
+		[18] = {1.000, 0.840, 0.000, 1.000}, -- Puppet Master -- Gold
+		[19] = {0.624, 0.169, 0.408, 1.000}, -- Dancer -- Amaranth
+		[20] = {0.482, 0.408, 0.933, 1.000}, -- Scholar -- Medium Slate Blue
+		[21] = {1.000, 0.547, 0.000, 1.000}, -- Geomancer -- Dark Orange
+		[22] = {0.584, 0.208, 0.325, 1.000}, -- RuneFencer -- Red Purple
+		[23] = {0.000, 0.000, 0.500, 1.000}, -- Monstrosity -- Dark Blue
+		[24] = {0.000, 0.000, 0.500, 1.000}, -- None -- Dark Blue
 	}
+}
+
+local job_lookup = T{
+	[1] = 'WAR',
+	[2] = 'MNK',
+	[3] = 'WHM',
+	[4] = 'BLM',
+	[5] = 'RDM',
+	[6] = 'THF',
+	[7] = 'PLD',
+	[8] = 'DRK',
+	[9] = 'BST',
+	[10] = 'BRD',
+	[11] = 'RNG',
+	[12] = 'SAM',
+	[13] = 'NIN',
+	[14] = 'DRG',
+	[15] = 'SMN',
+	[16] = 'BLU',
+	[17] = 'COR',
+	[18] = 'PUP',
+	[19] = 'DNC',
+	[20] = 'SCH',
+	[21] = 'GEO',
+	[22] = 'RUN'
 }
 
 local settingsLib = require('settings')
@@ -235,6 +291,7 @@ logging = true
 buffs = {["Palisade"] = false, ["Reprisal"] = false, ["Battuta"] = false, ["Retaliation"] = false}
 
 database = {}
+job_db = {}
 filters = T{
 		['mob'] = {},
 		['player'] = {}
@@ -319,7 +376,19 @@ ashita.events.register('packet_in', 'packet_in_cb', function(e)
 	end
 end)
 
-init_boxes()
+if (not settings.imgui_display.enable_imgui[1]) then
+	init_boxes()
+end
+
+local function test_job_colors()
+	for i = 1, 22 do
+		local job = job_lookup[i]
+		register_data('testmob', job, 'melee', 200)
+		job_db[job] = i
+	end
+	--dumpTable(job_db)
+	--dumpTable(database)
+end
 
 ashita.events.register('command', 'command_cb', function (e)
     local args = e.command:args()
@@ -329,16 +398,28 @@ ashita.events.register('command', 'command_cb', function (e)
 				return true
 		elseif (args[2] == 'filter' or args[2] == 'f') and args[2] then
 			edit_filters(args[3],args[4],args[5])
-			update_texts()
+			if (settings.imgui_display.enable_imgui[1]) then
+				update_display()
+			else
+				update_texts()
+			end
 			return true
 		elseif (args[2] == 'list' or args[2] == '2') then
 			print_list(args[3])
 		elseif (args[2] == 'show' or args[2] == 's' or args[2] == 'display' or args[2] == 'd') then
 			toggle_box(args[3])
-			update_texts()
+			if (settings.imgui_display.enable_imgui[1]) then
+				update_display()
+			else
+				update_texts()
+			end
 		elseif args[2] == 'reset' then
 			reset_parse()
-			update_texts()
+			if (settings.imgui_display.enable_imgui[1]) then
+				update_display()
+			else
+				update_texts()
+			end
 		elseif args[2] == 'rename' and args[3] and args[4] then
 			if args[4]:gsub('[%w_]','')=="" then
 				renames[args[3]:gsub("^%l", string.upper)] = args[4]
@@ -357,7 +438,11 @@ ashita.events.register('command', 'command_cb', function (e)
 			end
 		elseif args[2] == 'import' and args[3] then
 			import_parse(args[3])
-			update_texts()
+			if (settings.imgui_display.enable_imgui[1]) then
+				update_display()
+			else
+				update_texts()
+			end
 		elseif args[2] == 'log' then
 			if logging then logging=false message('Logging has been turned off.') else logging=true message('Logging has been turned on.') end
 		elseif args[2] == 'help' then
@@ -374,13 +459,17 @@ ashita.events.register('command', 'command_cb', function (e)
 			message('interval [number] :  Defines how many actions it takes before displays are updated.')
 			message('save: Saves the position of the parse windows.')
 		elseif args[2] == 'save' then
-			for box,__ in pairs(settings.display) do
-				settings.display[box].fontsSettings.position_x = text_box[box].position_x
-				settings.display[box].fontsSettings.position_y = text_box[box].position_y
+			if (not settings.imgui_display.enable_imgui[1]) then
+				for box,__ in pairs(settings.display) do
+					settings.display[box].fontsSettings.position_x = text_box[box].position_x
+					settings.display[box].fontsSettings.position_y = text_box[box].position_y
+				end
 			end
 			settingsLib.save()
+		elseif args[2] == 'colortest' then
+			test_job_colors()
 		else
-			message('That command was not found. Use /parse help for a list of commands.')
+			display.editor.is_open[1] = true
 		end
     end
     return false
@@ -479,6 +568,7 @@ end
 
 function reset_parse()
 	database = {}
+	job_db = {}
 end
 
 function toggle_box(box_name)
@@ -618,9 +708,13 @@ end
 
 local lastUpdate = os.time()
 ashita.events.register('d3d_present', 'present_cb', function()
+	render_editor()
 	if os.time() - lastUpdate > settings.update_interval then
-		update_texts()
-		update_display()
+		if (settings.imgui_display.enable_imgui[1]) then
+			update_display()
+		else
+			update_texts()
+		end
 	end
 end)
 
@@ -635,9 +729,11 @@ settingsLib.register('settings', 'settings_update', function(newSettings)
 end)
 
 ashita.events.register('unload', 'unload_cb', function ()
-	for box,__ in pairs(settings.display) do
-		settings.display[box].fontsSettings.position_x = text_box[box].position_x
-		settings.display[box].fontsSettings.position_y = text_box[box].position_y
+	if (not settings.imgui_display.enable_imgui[1]) then
+		for box,__ in pairs(settings.display) do
+			settings.display[box].fontsSettings.position_x = text_box[box].position_x
+			settings.display[box].fontsSettings.position_y = text_box[box].position_y
+		end
 	end
     settingsLib.save()
 end)

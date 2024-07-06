@@ -6,6 +6,12 @@
 
 local fonts = require("fonts")
 local imgui = require("imgui")
+local chat = require('chat')
+local settingsLib = require('settings')
+local display = {}
+display.editor = T{
+	is_open = T{false},
+}
 
 function init_boxes()
 	for box,__ in pairs(settings.display) do
@@ -251,15 +257,6 @@ end
 --ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 --(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 --SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-local function get_color_float(value)
-	if (value >= 255) then
-		return 1.0
-	elseif (value < 0) then
-		return 0.0
-	else
-		return (value / 256)
-	end
-end
 
 local function format_tab(stat_type)
 	local info = {}
@@ -270,22 +267,9 @@ local function format_tab(stat_type)
 	if (stat_type == 'defense') then
 		sort_type = 'defense'
 	end
-	local display = settings.imgui_display
-	local stat_columns = display[stat_type].columns
+	local display_settings = settings.imgui_display
+	local stat_columns = display_settings[stat_type].columns
 	local num_of_col = 1
-	local player_label_color = {
-		get_color_float(settings.label['player'].red),
-		get_color_float(settings.label['player'].green),
-		get_color_float(settings.label['player'].blue),
-		1.0
-	}
-
-	local stat_label_color = {
-		get_color_float(settings.label['stat'].red),
-		get_color_float(settings.label['stat'].green),
-		get_color_float(settings.label['stat'].blue),
-		1.0
-	}
 
 	-- add data to info table
 	for __,player_name in pairs(get_players()) do
@@ -347,18 +331,34 @@ local function format_tab(stat_type)
 			imgui.TableNextRow()
 			local player = sorted_players[row+1]
 			local selected = -1
+
+			if (display_settings.use_job_colors[1]) then
+				if (job_db[player]) then
+					local color = display_settings.colors[job_db[player]]
+					color = imgui.ColorConvertFloat4ToU32(color)
+					imgui.TableSetBgColor(ImGuiTableBgTarget_RowBg0, color)
+				else
+					local color = display_settings.colors[24]
+					color = imgui.ColorConvertFloat4ToU32(color)
+					imgui.TableSetBgColor(ImGuiTableBgTarget_RowBg0, color)
+				end
+			end
 			for col = 0, num_of_col - 1 do
 				imgui.TableSetColumnIndex(col)
 				--Filter still needs testing
 				if (imgui.Selectable('', selected == col, bit.bor(ImGuiSelectableFlags_SpanAllColumns, ImGuiSelectableFlags_AllowItemOverlap))) then
-					if (filters['player'] == nil) then
-						filters['player'] = player
+					if (filters['player'] == nil or filters['player'] == {}) then
+						filters['player'] = {player}
 					else
 						filters['player'] = {}
 					end
 				end
 				imgui.SameLine()
-				imgui.Text(tostring(info[player][col+1]))
+				if (display_settings.use_job_colors[1]) then
+					imgui.TextColored(display_settings.font_color, tostring(info[player][col+1]))
+				else
+					imgui.Text(tostring(info[player][col+1]))
+				end
 			end
 		end
 		imgui.EndTable()
@@ -366,55 +366,62 @@ local function format_tab(stat_type)
 end
 
 function update_display()
-	local display = settings.imgui_display
+	local display_settings = settings.imgui_display
 	--Don't render display if it is set to not visible
-	if (not display.visible[1]) then return; end
+	if (not display_settings.visible[1]) then return; end
 
 	--Don't render display if Ashita is currently hiding font objects
 	if (not AshitaCore:GetFontManager():GetVisible()) then return; end
 
-	imgui.SetNextWindowBgAlpha(display.opacity[1])
-	imgui.SetNextWindowSize({display.width[1], display.height[1]}, ImGuiCond_Once)
-	if (imgui.Begin('Parse', display.visible[1], bit.bor(ImGuiWindowFlags_NoTitleBar,
+	imgui.SetNextWindowBgAlpha(display_settings.opacity[1])
+	imgui.SetNextWindowSize({display_settings.width[1], display_settings.height[1]}, ImGuiCond_Once)
+	if (imgui.Begin('Parse##Display', display_settings.visible[1], bit.bor(ImGuiWindowFlags_NoTitleBar,
 														ImGuiWindowFlags_NoScrollbar,
 														ImGuiWindowFlags_NoCollapse,
 														ImGuiWindowFlags_NoFocusOnAppearing,
 														ImGuiWindowFlags_NoNav))) then
-		imgui.SetWindowFontScale(display.font_scale[1])
+		imgui.SetWindowFontScale(display_settings.font_scale[1])
 
 		--Handle resizing window
 		local width, height = imgui.GetWindowSize()
-		if (width ~= display.width[1] or height ~= display.height[1]) then
-			display.width[1] = width
-			display.height[1] = height
+		if (width ~= display_settings.width[1] or height ~= display_settings.height[1]) then
+			display_settings.width[1] = width
+			display_settings.height[1] = height
 		end
 
 		--Handle positioning of window
 		local posx, posy = imgui.GetWindowPos()
-		if (posx ~= display.x[1] or posy ~= display.y[1]) then
-			display.x[1] = posx
-			display.y[1] = posy
+		if (posx ~= display_settings.x[1] or posy ~= display_settings.y[1]) then
+			display_settings.x[1] = posx
+			display_settings.y[1] = posy
 		end
 
+		--Top row of buttons
+		if (imgui.Button('\xef\x81\x9e')) then
+			reset_parse()
+		end
+
+		--Tabs
+		imgui.SetNextWindowBgAlpha(display_settings.opacity[1])
 		if (imgui.BeginTabBar('##ParseTabBar', ImGuiTabBarFlags_NoCloseWithMiddleMouseButton)) then
 
 			if (imgui.BeginTabItem('Melee', nil)) then
-				display.active_tab = 'melee'
+				display_settings.active_tab = 'melee'
 				format_tab('melee')
 				imgui.EndTabItem()
 			end
 			if (imgui.BeginTabItem('Defense', nil)) then
-				display.active_tab = 'defense'
+				display_settings.active_tab = 'defense'
 				format_tab('defense')
 				imgui.EndTabItem()
 			end
 			if (imgui.BeginTabItem('Ranged', nil)) then
-				display.active_tab = 'ranged'
+				display_settings.active_tab = 'ranged'
 				format_tab('ranged')
 				imgui.EndTabItem()
 			end
 			if (imgui.BeginTabItem('Magic', nil)) then
-				display.active_tab = 'magic'
+				display_settings.active_tab = 'magic'
 				format_tab('magic')
 				imgui.EndTabItem()
 			end
@@ -423,3 +430,106 @@ function update_display()
 	end
 	imgui.End()
 end
+
+----------------------------------------------------------------------------------------------------
+-- Settings Editor
+----------------------------------------------------------------------------------------------------
+local function render_general_config()
+	imgui.Text('General Settings')
+	if (imgui.Checkbox('Enable Imgui Display', settings.imgui_display.enable_imgui)) then
+		if (settings.imgui_display.enable_imgui[1]) then
+			for _,box in pairs(text_box) do
+				box.destroy(box)
+			end
+		else
+			init_boxes()
+		end
+	end
+	imgui.ShowHelp('Enables the new Imgui display. If unchecked defaults back to the fonts display.')
+	imgui.Checkbox('Visible', settings.imgui_display.visible)
+	imgui.ShowHelp('Toggles if Parse is visible or not.')
+	imgui.SameLine()
+	imgui.Checkbox('Enable Colors', settings.imgui_display.use_job_colors)
+	imgui.ShowHelp('Enables custom colors.')
+	imgui.SliderFloat('Opacity', settings.imgui_display.opacity, 0.125, 1.0, '%.3f')
+	imgui.ShowHelp('The opacity of the Parse window')
+	imgui.SliderFloat('Font Scale', settings.imgui_display.font_scale, 0.1, 2.0, '%.3f')
+	imgui.ShowHelp('The scaling of the font size')
+	local pos = {settings.imgui_display.x[1], settings.imgui_display.y[1]}
+	if (imgui.InputInt2('Position', pos)) then
+		imgui.SetWindowPos('Parse##Display', pos)
+	end
+end
+
+local function render_color_config()
+	imgui.Text('Color Settings')
+	local colors = settings.imgui_display.colors
+	imgui.ColorEdit4('Font', settings.imgui_display.font_color)
+	imgui.ColorEdit4('Default', colors[24])
+	imgui.ColorEdit4('WAR', colors[1])
+	imgui.ColorEdit4('MNK', colors[2])
+	imgui.ColorEdit4('WHM', colors[3])
+	imgui.ColorEdit4('BLM', colors[4])
+	imgui.ColorEdit4('RDM', colors[5])
+	imgui.ColorEdit4('THF', colors[6])
+	imgui.ColorEdit4('PLD', colors[7])
+	imgui.ColorEdit4('DRK', colors[8])
+	imgui.ColorEdit4('BST', colors[9])
+	imgui.ColorEdit4('BRD', colors[10])
+	imgui.ColorEdit4('RNG', colors[11])
+	imgui.ColorEdit4('SAM', colors[12])
+	imgui.ColorEdit4('NIN', colors[13])
+	imgui.ColorEdit4('DRG', colors[14])
+	imgui.ColorEdit4('SMN', colors[15])
+	imgui.ColorEdit4('BLU', colors[16])
+	imgui.ColorEdit4('COR', colors[17])
+	imgui.ColorEdit4('PUP', colors[18])
+	imgui.ColorEdit4('DNC', colors[19])
+	imgui.ColorEdit4('SCH', colors[20])
+	imgui.ColorEdit4('GEO', colors[21])
+	imgui.ColorEdit4('RUN', colors[22])
+end
+
+function render_editor()
+	if (not display.editor.is_open[1]) then
+		return
+	end
+
+	imgui.SetNextWindowSize({0, 0}, ImGuiCond_Always)
+	if (imgui.Begin('Parse##Config', display.editor.is_open, ImGuiWindowFlags_AlwaysAutoResize)) then
+		if (imgui.Button('Save Settings')) then
+			settingsLib.save(settings)
+			print(chat.header(addon.name):append(chat.message('Settings saved.')))
+		end
+		imgui.SameLine()
+		if (imgui.Button('Reload Settings')) then
+			settingsLib.reload()
+			print(chat.header(addon.name):append(chat.message('Settings reloaded.')))
+		end
+		imgui.SameLine()
+		if (imgui.Button('Reset Settings')) then
+			settingsLib.reset()
+			print(chat.header(addon.name):append(chat.message('Settings reset to defaults.')))
+		end
+		if (imgui.Button('Clear Parse')) then
+			reset_parse()
+			print(chat.header(addon.name):append(chat.message('Parse database cleared.')))
+		end
+	end
+
+	imgui.Separator()
+
+	if (imgui.BeginTabBar('ParseEdit##TabBar', ImGuiTabBarFlags_NoCloseWithMiddleMouseButton)) then
+		if (imgui.BeginTabItem('General', nil)) then
+			render_general_config()
+			imgui.EndTabItem()
+		end
+		if (imgui.BeginTabItem('Colors', nil)) then
+			render_color_config()
+			imgui.EndTabItem()
+		end
+	end
+	imgui.End()
+end
+
+return display
