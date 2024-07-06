@@ -509,7 +509,13 @@ function player_info(id)
 
 			if i == 0 and partyID == player_table.id then
 				typ = 'me'
+				if (job_db[player_table.name] == nil) then
+					job_db[player_table.name] = party:GetMemberMainJob(i)
+				end
 			elseif i > 0 and partyID == player_table.id then
+				if (job_db[player_table.name] == nil) then
+					job_db[player_table.name] = party:GetMemberMainJob(i)
+				end
 				typ = 'party'
 				
 				if i > 5 then
